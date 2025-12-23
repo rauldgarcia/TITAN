@@ -6,3 +6,6 @@ postgres_data/
 .idea/
 .vscode/
 coverage/
+data/
+logs/
+*.log

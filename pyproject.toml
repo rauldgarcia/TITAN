@@ -6,14 +6,17 @@ authors = [
     {name = "raul",email = "rauld.garcia95@gmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<4.0"
 dependencies = [
     "fastapi (>=0.127.0,<0.128.0)",
     "uvicorn (>=0.40.0,<0.41.0)",
     "sqlmodel (>=0.0.27,<0.0.28)",
     "asyncpg (>=0.31.0,<0.32.0)",
     "pydantic-settings (>=2.12.0,<3.0.0)",
-    "pgvector (>=0.4.2,<0.5.0)"
+    "pgvector (>=0.4.2,<0.5.0)",
+    "sec-edgar-downloader (>=5.0.3,<6.0.0)",
+    "beautifulsoup4 (>=4.14.3,<5.0.0)",
+    "lxml (>=6.0.2,<7.0.0)"
 ]
 
 
