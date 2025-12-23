@@ -1,0 +1,5 @@
+\c postgres
+CREATE EXTENSION IF NOT EXISTS vector;
+
+\c titan_db
+CREATE EXTENSION IF NOT EXISTS vector;
