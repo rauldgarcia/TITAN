@@ -13,6 +13,7 @@ TITAN is built following **Clean Architecture** principles and modern MLOps prac
 - **Database:** PostgreSQL 16 + `pgvector` (Dockerized).
 - **Data Engineering:** `sec-edgar-downloader`, BeautifulSoup4 (Custom Parsing).
 - **Inference:** Local LLMs (Ollama) & Cloud Fallbacks.
+- **Vector Search:** SentenceTransformers (All-MiniLM/MPNet) with GPU Acceleration (CUDA).
 - **Infrastructure:** Docker Compose, Poetry.
 
 ---
@@ -24,6 +25,7 @@ TITAN is built following **Clean Architecture** principles and modern MLOps prac
 - Python 3.12+
 - Docker & Docker Compose
 - Poetry (Dependency Manager)
+- NVIDIA GPU (Optional, for accelerated vectorization)
 
 ### 2\. Installation
 
@@ -47,9 +49,9 @@ TITAN is built following **Clean Architecture** principles and modern MLOps prac
 
 ---
 
-## 📊 Data Pipeline (ETL)
+## 📊 Data Pipeline (RAG Ingestion)
 
-TITAN includes a specialized ETL pipeline to ingest and normalize financial data from the SEC EDGAR database.
+TITAN includes a specialized ETL pipeline to ingest, normalize, and vectorize financial data from the SEC EDGAR database.
 
 ### Phase 1: Extraction (Download)
 
@@ -67,6 +69,15 @@ Cleanses raw HTML, removing noise (scripts, styles) while preserving tabular str
 
 _Cleaned text files are stored in `data/processed/`._
 
+### Phase 3: Loading (Vectorization)
+
+Chunks the cleaned text, generates embeddings using `sentence-transformers` (CUDA-enabled), and persists them into PostgreSQL.
+
+    poetry run python scripts/ingest/vectorize.py
+
+- **Model:** `all-mpnet-base-v2` (768 dimensions).
+- **Chunking Strategy:** Recursive Character Split (1000 chars, 150 overlap).
+
 ---
 
 ## 🗺️ Project Roadmap
@@ -78,10 +89,10 @@ _Cleaned text files are stored in `data/processed/`._
 - \[x\] **Phase 2: Data Engineering**
   - \[x\] SEC Downloader Script.
   - \[x\] HTML-to-Text Parser (BeautifulSoup).
-- \[ \] **Phase 3: The Brain (Vector Store)**
-  - \[ \] Local Embedding Generation (GPU Accelerated).
-  - \[ \] Vector Database Ingestion.
-  - \[ \] Semantic Search Endpoint.
+- \[x\] **Phase 3: The Brain (Vector Store)**
+  - \[x\] Local Embedding Generation (GPU Accelerated).
+  - \[x\] Vector Database Ingestion strategy (Batch Processing).
+  - \[ \] Semantic Search Endpoint (Next Step).
 - \[ \] **Phase 4: Agentic Workflow**
   - \[ \] LangGraph State Definition.
   - \[ \] "Analyst" & "Reporter" Agents.
