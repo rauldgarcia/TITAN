@@ -1,10 +1,13 @@
 import logging
+from pydantic import BaseModel
 from fastapi import FastAPI, Depends
 from contextlib import asynccontextmanager
 from sqlalchemy.sql import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import init_db, get_session
 from app.models.report import FinancialReport
+from app.services.retriever import RetrievalService
+from app.services.rag import RAGService
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +51,21 @@ async def health_check(session: AsyncSession = Depends(get_session)):
             "database": "unreachable",
             "detail": str(e)
         }
+
+class ChatRequest(BaseModel):
+    question: str
+
+@app.post("/chat/simple", tags=["Inference"])
+async def simple_chat(request: ChatRequest, session: AsyncSession = Depends(get_session)):
+    """
+    Direct RAG endpoint (No Agents yet).
+    Retrieves context -> Calls LLM -> Returns Answer.
+    """
+    retriever = RetrievalService(session)
+    rag_engine = RAGService(retriever)
+
+    result = await rag_engine.answer_question(request.question)
+    return result
 
 if __name__ == "__main__":
     import uvicorn
