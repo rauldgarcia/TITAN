@@ -25,7 +25,7 @@ TITAN is built following **Clean Architecture** principles and modern MLOps prac
 - Python 3.12+
 - Docker & Docker Compose
 - Poetry
-- **Ollama** installed and running.
+- **Ollama** running locally.
 
 ### 2\. Installation
 
@@ -36,41 +36,31 @@ TITAN is built following **Clean Architecture** principles and modern MLOps prac
     # Install dependencies
     poetry install
 
-    # Pull the Local LLM (Required for RAG)
-    ollama pull llama3.2
-
     # Start Infrastructure (Postgres + pgvector + pgAdmin)
     sudo docker compose up -d
 
 ### 3\. Run the API
 
-    # Ensure Ollama is running in background: 'ollama serve'
+    # Ensure Ollama is running in background
     poetry run uvicorn app.main:app --reload
-
-- **Swagger UI:** `http://localhost:8000/docs`
-- **Health Check:** `http://localhost:8000/health`
 
 ---
 
-## 🤖 RAG Interface (Chat)
+## 🤖 Agentic Workflow (LangGraph)
 
-You can interact with the ingested financial data via the REST API.
+TITAN uses a graph-based architecture to ensure high-quality responses.
 
-### Endpoint: `POST /chat/simple`
+### Endpoint: `POST /chat/agent`
 
-Performs semantic search on the vector database and generates a grounded response using the local LLM.
+Executes the **Corrective RAG (CRAG)** workflow:
 
-    // Request Body
+1.  **Retrieve:** Fetches semantic chunks from PostgreSQL.
+2.  **Grade:** A specialized LLM agent evaluates each document for relevance, filtering out noise.
+3.  **Generate:** Synthesizes the final answer using only high-quality context.
+
+    // Request
     {
-      "question": "What are the primary risk factors for Tesla?"
-    }
-
-
-
-    // Response
-    {
-      "answer": "According to Tesla's 10-K, primary risks include competition in the EV market...",
-      "sources": ["TSLA (chunk_45)", "TSLA (chunk_102)"]
+    "question": "What is the revenue of Apple and does the document mention 'Risk Factors'?"
     }
 
 ---
@@ -96,18 +86,16 @@ Performs semantic search on the vector database and generates a grounded respons
 - \[x\] **Phase 1: Foundation**
   - \[x\] Environment Setup (Poetry, Docker, Git).
   - \[x\] Async Database Layer (Postgres + pgvector).
-  - \[x\] Robust Configuration Management.
 - \[x\] **Phase 2: Data Engineering**
-  - \[x\] SEC Downloader Script.
-  - \[x\] HTML-to-Text Parser.
+  - \[x\] SEC Downloader & Parser.
 - \[x\] **Phase 3: The Brain (Vector Store)**
   - \[x\] GPU-Accelerated Vectorization.
-  - \[x\] Semantic Search Service (Cosine Similarity).
-  - \[x\] RAG Inference Endpoint (Ollama Integration).
+  - \[x\] Semantic Search Service.
 - \[ \] **Phase 4: Agentic Workflow**
-  - \[ \] LangGraph State Definition.
-  - \[ \] "Analyst" & "Reporter" Agents.
-  - \[ \] Self-Reflection Loop.
+  - \[x\] LangGraph State Definition.
+  - \[x\] Document Grader Node (Relevance Filter).
+  - \[ \] Search Fallback (Web Search).
+  - \[ \] "Reporter" Agent (Jinja2 Output).
 
 ---
 

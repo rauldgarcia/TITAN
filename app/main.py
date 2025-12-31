@@ -8,6 +8,7 @@ from app.db.session import init_db, get_session
 from app.models.report import FinancialReport
 from app.services.retriever import RetrievalService
 from app.services.rag import RAGService
+from app.agents.graph import TitanGraph
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +67,21 @@ async def simple_chat(request: ChatRequest, session: AsyncSession = Depends(get_
 
     result = await rag_engine.answer_question(request.question)
     return result
+
+@app.post("/chat/agent", tags=["Inference"])
+async def agent_chat(request: ChatRequest, session: AsyncSession = Depends(get_session)):
+    """
+    Agentic RAG endpoint (LangGraph).
+    Flow: Retrieve -> Grade (Filter) -> Generate.
+    """
+    graph_builder = TitanGraph(session)
+    app_graph = graph_builder.build_graph()
+    final_state = await app_graph.ainvoke({"question": request.question})
+
+    return {
+        "answer": final_state["generation"],
+        "sources": final_state.get("sources", [])
+    }
 
 if __name__ == "__main__":
     import uvicorn
