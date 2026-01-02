@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 import logging
 from pydantic import BaseModel
 from fastapi import FastAPI, Depends
@@ -9,6 +11,10 @@ from app.models.report import FinancialReport
 from app.services.retriever import RetrievalService
 from app.services.rag import RAGService
 from app.agents.graph import TitanGraph
+
+load_dotenv()
+print(f"🔍 DEBUG LANGCHAIN: {os.getenv('LANGCHAIN_PROJECT')}")
+print(f"🔍 DEBUG API KEY: {'OK' if os.getenv('LANGCHAIN_API_KEY') else 'MISSING'}")
 
 logger = logging.getLogger(__name__)
 

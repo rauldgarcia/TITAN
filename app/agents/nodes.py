@@ -3,12 +3,16 @@ from app.agents.state import AgentState
 from app.services.retriever import RetrievalService
 from app.services.rag import RAGService
 from app.core.config import settings
-from langchain_core.prompts import ChatPromptTemplate
+from app.schemas.report_schema import FinancialSummary
+from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_ollama import ChatOllama
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_core.output_parsers import JsonOutputParser
+from jinja2 import Environment, FileSystemLoader
 
 logger = logging.getLogger(__name__)
+templates_env = Environment(loader=FileSystemLoader("app/templates"))
 
 class AgentNodes:
     def __init__(self, session):
@@ -122,3 +126,45 @@ class AgentNodes:
         web_docs = [res["content"] for res in search_results]
 
         return {"documents": web_docs, "question": question}
+    
+    async def generate_report(self, state:AgentState) -> AgentState:
+        """
+        Node: Generates a structured HTML report using the filtered documents.
+        """
+        logger.info("---GENERATE REPORT (JINJA2)---")
+        question = state["question"]
+        documents = state["documents"]
+
+        context = "\n\n".join(documents) if documents else "No internal data found."
+        parser = JsonOutputParser(pydantic_object=FinancialSummary)
+
+        prompt = PromptTemplate(
+            template="""
+        You are a Financial Analyst.
+        Analyze the following context and extract the key information to fill the report.
+
+        Context: {context}
+
+        {format_instructions}
+
+        Ensure the 'severity' of risk is strictly 'High', 'Medium', or 'Low'.
+        """,
+        input_variable=["context"],
+        partial_variables={"format_instructions": parser.get_format_instructions()},
+        )
+
+        chain = prompt | self.grader_llm | parser
+
+        try:
+            logger.info("Extracting structured data...")
+            json_data = await chain.ainvoke({"context": context})
+
+            logger.info("Rendering HTML...")
+            template = templates_env.get_template("financial_report.html")
+            html_output = template.render(data=json_data)
+
+            return {"generation": html_output, "question": question}
+        
+        except Exception as e:
+            logger.error(f"Reporting failed: {e}")
+            return {"generation": f"Error generating report: {str(e)}", "question": question}

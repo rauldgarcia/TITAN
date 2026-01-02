@@ -30,7 +30,7 @@ class TitanGraph:
         workflow.add_node("retrieve", self.nodes.retrieve)
         workflow.add_node("grade_documents", self.nodes.grade_documents)
         workflow.add_node("web_search", self.nodes.web_search)
-        workflow.add_node("generate", self.nodes.generate)
+        workflow.add_node("generate", self.nodes.generate_report)
 
         workflow.set_entry_point("retrieve")
         workflow.add_edge("retrieve", "grade_documents")
