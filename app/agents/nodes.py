@@ -2,9 +2,11 @@ import logging
 from app.agents.state import AgentState
 from app.services.retriever import RetrievalService
 from app.services.rag import RAGService
+from app.core.config import settings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama
 from langchain_core.output_parsers import JsonOutputParser
+from langchain_community.tools.tavily_search import TavilySearchResults
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +14,7 @@ class AgentNodes:
     def __init__(self, session):
         self.retriever_service = RetrievalService(session)
         self.grader_llm = ChatOllama(model="llama3.2", temperature=0, format="json")
+        self.web_search_tool = TavilySearchResults(max_results=3, tavily_api_key=settings.TAVILY_API_KEY)
 
     async def retrieve(self, state: AgentState) -> AgentState:
         """
@@ -104,3 +107,18 @@ class AgentNodes:
         reponse = await chain.ainvoke({"context": context, "question": question})
 
         return {"generation": reponse.content, "question": question}
+    
+    async def web_search(self, state: AgentState) -> AgentState:
+        """
+        Node: Performs a web search when initial retrieval is insufficent.
+        """
+        logger.info("---WEB SEARCH---")
+        question = state["question"]
+
+        logger.info(f"Internal documents insufficient. Searching web for: '{question}'")
+
+        search_results = await self.web_search_tool.ainvoke({"query": question})
+
+        web_docs = [res["content"] for res in search_results]
+
+        return {"documents": web_docs, "question": question}

@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     POSTGRES_SERVER: str
     POSTGRES_PORT: str
     POSTGRES_DB: str
+    TAVILY_API_KEY: str
 
     @property
     def DATABASE_URL(self) -> str:

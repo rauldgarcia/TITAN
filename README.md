@@ -12,8 +12,8 @@ TITAN is built following **Clean Architecture** principles and modern MLOps prac
 - **Orchestration:** LangGraph (Cyclic Agentic Flows).
 - **Database:** PostgreSQL 16 + `pgvector` (Dockerized).
 - **Data Engineering:** `sec-edgar-downloader`, BeautifulSoup4 (Custom Parsing).
-- **Inference:** Local LLMs via **Ollama** (Llama 3.2 / Mistral).
-- **Vector Search:** SentenceTransformers (CUDA) + Cosine Similarity Search.
+- **Inference:** Local LLMs via **Ollama** (Llama 3.2).
+- **Tools:** **Tavily AI** (Optimized Web Search for Agents).
 - **Infrastructure:** Docker Compose, Poetry.
 
 ---
@@ -26,8 +26,9 @@ TITAN is built following **Clean Architecture** principles and modern MLOps prac
 - Docker & Docker Compose
 - Poetry
 - **Ollama** running locally.
+- **Tavily API Key** (for web search fallback).
 
-### 2\. Installation
+### 2\. Setup
 
     # Clone the repository
     git clone https://github.com/rauldgarcia/titan-platform.git
@@ -36,66 +37,62 @@ TITAN is built following **Clean Architecture** principles and modern MLOps prac
     # Install dependencies
     poetry install
 
-    # Start Infrastructure (Postgres + pgvector + pgAdmin)
+    # Configure Secrets (.env)
+    # Add TAVILY_API_KEY=tvly-xxxx
+
+    # Start Infrastructure
     sudo docker compose up -d
 
 ### 3\. Run the API
 
-    # Ensure Ollama is running in background
     poetry run uvicorn app.main:app --reload
 
 ---
 
-## 🤖 Agentic Workflow (LangGraph)
+## 🤖 Agentic Workflow (Self-Correcting RAG)
 
-TITAN uses a graph-based architecture to ensure high-quality responses.
+TITAN implements a \*\*Corrective RAG (CRAG)\*\* architecture with web fallback capabilities.
 
 ### Endpoint: `POST /chat/agent`
 
-Executes the **Corrective RAG (CRAG)** workflow:
+The graph executes the following logic:
 
-1.  **Retrieve:** Fetches semantic chunks from PostgreSQL.
-2.  **Grade:** A specialized LLM agent evaluates each document for relevance, filtering out noise.
-3.  **Generate:** Synthesizes the final answer using only high-quality context.
+1.  **Retrieve:** Fetches semantic chunks from PostgreSQL (10-K Filings).
+2.  **Grade:** A specialized Agent evaluates if the retrieved documents are relevant to the question.
+3.  **Decision Node (Conditional Edge):**
+    - ✅ **If Relevant:** Proceeds to **Generate** answer using internal data.
+    - ⚠️ **If Irrelevant/Empty:** Triggers **Web Search** (Tavily) to find real-time or missing info.
+4.  **Generate:** Synthesizes the final answer using the best available context (Internal vs External).
 
     // Request
     {
-    "question": "What is the revenue of Apple and does the document mention 'Risk Factors'?"
+    "question": "What is the current stock price of Apple?"
     }
+    // Logic: DB has 2024 data (Irrelevant) -> Falls back to Web Search -> Returns real-time price.
 
 ---
 
-## 📊 Data Pipeline (ETL)
+## 📊 Data Pipeline
 
-### Phase 1: Extraction
-
-    poetry run python scripts/ingest/download_sec.py
-
-### Phase 2: Transformation
-
-    poetry run python scripts/ingest/clean_data.py
-
-### Phase 3: Loading (Vectorization)
-
-    poetry run python scripts/ingest/vectorize.py
+- **Extraction:** `poetry run python scripts/ingest/download_sec.py`
+- **Transformation:** `poetry run python scripts/ingest/clean_data.py`
+- **Vectorization:** `poetry run python scripts/ingest/vectorize.py` (GPU Accelerated)
 
 ---
 
 ## 🗺️ Project Roadmap
 
 - \[x\] **Phase 1: Foundation**
-  - \[x\] Environment Setup (Poetry, Docker, Git).
   - \[x\] Async Database Layer (Postgres + pgvector).
 - \[x\] **Phase 2: Data Engineering**
-  - \[x\] SEC Downloader & Parser.
+  - \[x\] SEC ETL Pipeline.
 - \[x\] **Phase 3: The Brain (Vector Store)**
-  - \[x\] GPU-Accelerated Vectorization.
   - \[x\] Semantic Search Service.
-- \[ \] **Phase 4: Agentic Workflow**
-  - \[x\] LangGraph State Definition.
-  - \[x\] Document Grader Node (Relevance Filter).
-  - \[ \] Search Fallback (Web Search).
-  - \[ \] "Reporter" Agent (Jinja2 Output).
+- \[x\] **Phase 4: Agentic Workflow**
+  - \[x\] LangGraph State & Nodes.
+  - \[x\] Document Grader (Relevance Filter).
+  - \[x\] **Web Search Fallback (Tavily Integration).**
+  - \[ \] "Reporter" Agent (Jinja2 Output) - _Next Step_.
 
 ---
 
