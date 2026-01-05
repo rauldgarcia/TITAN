@@ -1,8 +1,8 @@
 # 🏦 TITAN: Autonomous Financial Intelligence Platform
 
-[![LangSmith](https://img.shields.io/badge/Observability-LangSmith-blue?style=flat&logo=langchain)](https://smith.langchain.com/) [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/) [![Postgres](https://img.shields.io/badge/DB-PostgreSQL_16-336791?style=flat&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![LangSmith](https://img.shields.io/badge/Observability-LangSmith-blue?style=flat&logo=langchain)](https://smith.langchain.com/) [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/) [![Postgres](https://img.shields.io/badge/DB-PostgreSQL_16-336791?style=flat&logo=postgresql&logoColor=white)](https://www.postgresql.org/) [![Tailwind](https://img.shields.io/badge/UI-TailwindCSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
-**TITAN** is an advanced Multi-Agent System designed to perform deep financial analysis and audit tasks on SEC 10-K filings. Powered by **LangGraph**, **FastAPI**, and **Vector Search**, it automates the retrieval, reasoning, and reporting of complex financial data.
+**TITAN** is an advanced Multi-Agent System designed to perform deep financial analysis and audit tasks on SEC 10-K filings. Powered by **LangGraph**, **FastAPI**, and **Vector Search**, it automates the retrieval, reasoning, and reporting of complex financial data into professional HTML Dashboards.
 
 ---
 
@@ -17,7 +17,7 @@ TITAN is built following **Clean Architecture** principles and modern MLOps prac
 - **Inference:** Local LLMs via **Ollama** (Llama 3.2).
 - **Tools:** **Tavily AI** (Web Search Fallback).
 - **Observability:** **LangSmith** (Tracing & Monitoring).
-- **Reporting:** Jinja2 (Structured HTML Generation).
+- **Reporting Engine:** Jinja2 + TailwindCSS (Enterprise-grade HTML Generation).
 
 ---
 
@@ -41,7 +41,7 @@ TITAN is built following **Clean Architecture** principles and modern MLOps prac
 
     # Configure Secrets (.env)
     # TAVILY_API_KEY=tvly-xxxx
-    # LANGCHAIN_API_KEY=lsv2_xxxx (Optional for Tracing)
+    # LANGCHAIN_API_KEY=lsv2_xxxx
 
     # Start Infrastructure
     sudo docker compose up -d
@@ -61,13 +61,17 @@ TITAN implements a \*\*Corrective RAG (CRAG)\*\* architecture with web fallback 
 1.  **Retrieve:** Fetches semantic chunks from PostgreSQL.
 2.  **Grade:** Filter irrelevant documents.
 3.  **Decision (Conditional Edge):** Uses DB context OR falls back to Web Search (Tavily).
-4.  **Report:** Extracts structured JSON (Risks, Outlook, Summary) and renders a styled HTML report.
+4.  **Report Generation:**
+
+    - Extracts structured JSON (Risks, Outlook, Summary) using strict output parsers.
+    - Renders a **"Glassmorphism" Dashboard** using Jinja2 templates.
 
     // Request
     {
-    "question": "Analyze the risk factors and strategic outlook for Apple"
+    "question": "Analyze the risk factors and strategic outlook for Apple",
+    "thread_id": "session_123"
     }
-    // Returns: A full HTML Rendered Report.
+    // Returns: A full HTML Rendered Report with tables and KPIs.
 
 ---
 
@@ -87,11 +91,11 @@ TITAN implements a \*\*Corrective RAG (CRAG)\*\* architecture with web fallback 
 - \[x\] **Phase 4: Agentic Workflow** (LangGraph, Self-Correction, Web Search).
 - \[x\] **Phase 5: Reporting Engine**
   - \[x\] Structured Output (Pydantic to JSON).
-  - \[x\] Jinja2 HTML Rendering.
-- \[ \] **Phase 6: Production Readiness**
+  - \[x\] Jinja2 + TailwindCSS HTML Rendering.
+- \[ \] **Phase 6: Production Hardening**
+  - \[ \] PostgreSQL Persistence (Long-term Memory).
+  - \[ \] Prompts Refactoring & Centralization.
   - \[ \] Comprehensive Testing (Pytest).
-  - \[ \] Cloud Deployment (GCP Cloud Run).
-  - \[ \] Frontend UI (React/Streamlit).
 
 ---
 

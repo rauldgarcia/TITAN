@@ -9,6 +9,8 @@ from langchain_ollama import ChatOllama
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.output_parsers import JsonOutputParser
+from langchain_experimental.utilities import PythonREPL
+from langchain_core.tools import Tool
 from jinja2 import Environment, FileSystemLoader
 
 logger = logging.getLogger(__name__)
@@ -19,6 +21,7 @@ class AgentNodes:
         self.retriever_service = RetrievalService(session)
         self.grader_llm = ChatOllama(model="llama3.2", temperature=0, format="json")
         self.web_search_tool = TavilySearchResults(max_results=3, tavily_api_key=settings.TAVILY_API_KEY)
+        self.repl = PythonREPL()
 
     async def retrieve(self, state: AgentState) -> AgentState:
         """
@@ -127,7 +130,7 @@ class AgentNodes:
 
         return {"documents": web_docs, "question": question}
     
-    async def generate_report(self, state:AgentState) -> AgentState:
+    async def generate_report(self, state: AgentState) -> AgentState:
         """
         Node: Generates a structured HTML report using the filtered documents.
         """
@@ -168,3 +171,27 @@ class AgentNodes:
         except Exception as e:
             logger.error(f"Reporting failed: {e}")
             return {"generation": f"Error generating report: {str(e)}", "question": question}
+
+    async def run_python_analysis(self, state: AgentState) -> AgentState:
+        """
+        Node: Executes python code to perform financial calculations.
+        Used when the query implies math (e.g., 'Calculate current ratio').
+        """
+        logger.info("---QUANT ANALYST (PYTHON)---")
+        question = state["question"]
+
+        code_gen_prompt = f"""
+        You are a Python Data Scientist. Write python code to solve: {question}.
+        Assume you have varaible like 'revenue', 'debt' printed out if provided in context.
+        Just output the python code. No markdown backticks.
+        """
+        code = self.grader_llm.invoke(code_gen_prompt).content
+
+        try:
+            logger.info(f"Executing Code: {code[:50]}...")
+            result = self.repl.run(code)
+            logger.info(f"Calculating Result: {result}")
+            return {"documents": [f"Python Calculation Result: {result}"], "question": question}
+        
+        except Exception as e:
+            return {"documents": [f"Error calculating: {e}"], "question": question}

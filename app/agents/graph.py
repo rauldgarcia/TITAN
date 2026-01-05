@@ -1,4 +1,5 @@
 from langgraph.graph import END, StateGraph
+from langgraph.checkpoint.memory import MemorySaver
 from app.agents.state import AgentState
 from app.agents.nodes import AgentNodes
 import logging
@@ -23,6 +24,7 @@ def decide_to_generate_or_search(state: AgentState) -> str:
 class TitanGraph:
     def __init__(self, session):
         self.nodes = AgentNodes(session)
+        self.memory = MemorySaver()
 
     def build_graph(self):
         workflow = StateGraph(AgentState)
@@ -34,11 +36,13 @@ class TitanGraph:
 
         workflow.set_entry_point("retrieve")
         workflow.add_edge("retrieve", "grade_documents")
-        workflow.add_conditional_edges("grade_documents", decide_to_generate_or_search, {
-            "web_search": "web_search",
-            "generate": "generate"
-        })
+        workflow.add_conditional_edges(
+            "grade_documents", decide_to_generate_or_search, {
+                "web_search": "web_search",
+                "generate": "generate"
+                }
+            )
         workflow.add_edge("web_search", "generate")
         workflow.add_edge("generate", END)
 
-        return workflow.compile()
+        return workflow.compile(checkpointer=self.memory)
