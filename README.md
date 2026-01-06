@@ -10,6 +10,7 @@
 
 TITAN has evolved from a linear RAG into a **Supervisor-Worker** topology. A central orchestrator creates a plan and loops through specialized agents until the analysis is complete.
 
+```mermaid
     graph TD
         User[User Request] --> Supervisor{SUPERVISOR NODE}
 
@@ -34,6 +35,7 @@ TITAN has evolved from a linear RAG into a **Supervisor-Worker** topology. A cen
         Return2 --> Supervisor
 
         Reporter --> HTML[HTML Dashboard] --> End((End))
+```
 
 ---
 
@@ -83,24 +85,38 @@ TITAN has evolved from a linear RAG into a **Supervisor-Worker** topology. A cen
 
 ---
 
-## 🗺️ Project Roadmap
+### ✅ Completed Phases
 
-- \[x\] **Phase 1: Foundation** (DB, Docker, Async Config).
-- \[x\] **Phase 2: Data Engineering** (ETL, SEC Parsing).
-- \[x\] **Phase 3: The Brain** (Vector Search, Embeddings).
-- \[x\] **Phase 4: Agentic Workflow v1** (Self-Correction, Web Search).
-- \[x\] **Phase 5: Advanced Orchestration (The "Deep Analyzer")**
-  - \[x\] **Supervisor Node:** Central router for multi-agent delegation.
-  - \[x\] **Quant Agent:** Python REPL integration for math operations.
-  - \[x\] **Circuit Breaker:** Logic to prevent infinite reasoning loops.
-  - \[x\] **Persistent Memory:** Postgres-backed thread persistence.
-- \[ \] **Phase 6: MLOps & Quality Engineering**
-  - \[ \] **Unit & Integration Testing:** Comprehensive Pytest suite.
-  - \[ \] **CI/CD Pipelines:** GitHub Actions.
-  - \[ \] **Evaluation:** RAGAS metrics implementation.
-- \[ \] **Phase 7: Full Stack Experience**
-  - \[ \] **Frontend Client:** React Application.
-  - \[ \] **Cloud Deployment:** GCP Cloud Run.
+- **Phase 1: Foundation**
+  - \[x\] Environment Setup (Poetry, Docker, Git).
+  - \[x\] Async Database Layer (Postgres + pgvector).
+- **Phase 2: Data Engineering (ETL)**
+  - \[x\] SEC Downloader Script.
+  - \[x\] HTML-to-Text Parser (BeautifulSoup).
+  - \[x\] GPU-Accelerated Vectorization (SentenceTransformers).
+- **Phase 3: The Brain (Inference)**
+  - \[x\] Semantic Search Service (Cosine Similarity).
+  - \[x\] RAG Integration with Local LLMs (Ollama).
+- **Phase 4: Agentic Workflow v1**
+  - \[x\] LangGraph State Definition.
+  - \[x\] Self-Correction Logic (Document Grader).
+  - \[x\] Web Search Fallback (Tavily).
+  - \[x\] **Reporting Engine:** Jinja2 + TailwindCSS HTML Generation.
+  - \[x\] **Refactoring:** Centralized Prompts & Clean Architecture.
+- **Phase 5: Advanced Orchestration (The "Deep Analyzer")**
+  - \[x\] **Persistent Memory:** Replace in-memory checkpointer with PostgreSQL persistence (Long-running threads).
+  - \[x\] **Hierarchical Agents:** Implement a "Supervisor" node to delegate tasks.
+  - \[x\] **Quantitative Tool:** Connect Python REPL for real-time financial calculations (Ratios, Growth rates).
+
+### 🚧 In Progress & Future Steps
+
+- **Phase 6: MLOps & Quality Engineering**
+  - \[ \] **Unit & Integration Testing:** Comprehensive Pytest suite for agents and API.
+  - \[ \] **CI/CD Pipelines:** GitHub Actions for automated linting, testing, and Docker builds.
+  - \[ \] **Evaluation:** Implement RAGAS to measure retrieval accuracy and hallucination rates.
+- **Phase 7: Full Stack Experience**
+  - \[ \] **Frontend Client:** React Application for chat interface and report visualization.
+  - \[ \] **Cloud Deployment:** Deploy backend to GCP Cloud Run.
 
 ---
 
