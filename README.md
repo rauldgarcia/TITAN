@@ -11,15 +11,31 @@
 TITAN implements a **Corrective RAG (CRAG)** workflow with logic to fallback to external search if internal data is insufficient.
 
 ```mermaid
-graph TD
-    A[Start Request] --> B[Retrieve Node]
-    B -->|Fetch 10-K Chunks| C[Grade Node]
-    C -->|Evaluate Relevance| D{Decision?}
-    D -- Relevant --> E[Generate Report]
-    D -- Not Relevant --> F[Web Search Node]
-    F -->|Fetch Live Data| E
-    E -->|Render HTML| G[End Response]
+    graph TD
+        A[Start Request] --> B[Retrieve Node]
+        B -->|Fetch 10-K Chunks| C[Grade Node]
+        C -->|Evaluate Relevance| D{Decision?}
+        D -- Relevant --> E[Generate Report]
+        D -- Not Relevant --> F[Web Search Node]
+        F -->|Fetch Live Data| E
+        E -->|Render HTML| G[End Response]
 ```
+
+---
+
+## 🏗️ Architecture & Tech Stack
+
+TITAN is built following **Clean Architecture** principles and modern MLOps practices:
+
+- **Core Backend:** Python 3.12+, FastAPI (Async), SQLModel.
+- **Orchestration:** LangGraph (Cyclic Agentic Flows).
+- **Persistence:** PostgreSQL + `psycopg-pool` (Async Connection Pooling for long-term agent memory).
+- **Database:** PostgreSQL 16 + `pgvector` (Dockerized).
+- **Data Engineering:** `sec-edgar-downloader`, BeautifulSoup4.
+- **Inference:** Local LLMs via **Ollama** (Llama 3.2).
+- **Tools:** **Tavily AI** (Web Search Fallback).
+- **Observability:** **LangSmith** (Tracing & Monitoring).
+- **Reporting Engine:** Jinja2 + TailwindCSS.
 
 ---
 
@@ -54,10 +70,6 @@ graph TD
 
 ---
 
-## 🗺️ Project Roadmap
-
-The project is structured to evolve from a basic RAG system to a fully autonomous "Deep Analyzer" platform.
-
 ### ✅ Completed Phases
 
 - **Phase 1: Foundation**
@@ -80,7 +92,7 @@ The project is structured to evolve from a basic RAG system to a fully autonomou
 ### 🚧 In Progress & Future Steps
 
 - **Phase 5: Advanced Orchestration (The "Deep Analyzer")**
-  - \[ \] **Persistent Memory:** Replace in-memory checkpointer with PostgreSQL persistence (Long-running threads).
+  - \[x\] **Persistent Memory:** Replace in-memory checkpointer with PostgreSQL persistence (Long-running threads).
   - \[ \] **Hierarchical Agents:** Implement a "Supervisor" node to delegate tasks.
   - \[ \] **Quantitative Tool:** Connect Python REPL for real-time financial calculations (Ratios, Growth rates).
 - **Phase 6: MLOps & Quality Engineering**

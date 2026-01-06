@@ -13,6 +13,7 @@ from app.models.report import FinancialReport
 from app.services.retriever import RetrievalService
 from app.services.rag import RAGService
 from app.agents.graph import TitanGraph
+from app.core.db_pool import open_pool, close_pool
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -23,9 +24,12 @@ async def lifespan(app: FastAPI):
     try:
         await init_db()
         logger.info("System Ready.")
+        await open_pool()
+        logger.info("LangGraph Persistence Pool Ready.")
     except Exception as e:
         logger.error(f"Critical Startup Error: {e}")
     yield
+    await close_pool()
     logger.info("TITAN System: SHUTTING DOWN...")
 
 app = FastAPI(
@@ -80,15 +84,13 @@ async def simple_chat(request: ChatRequest, session: AsyncSession = Depends(get_
 @app.post("/chat/agent", tags=["Inference"])
 async def agent_chat(request: AgentRequest, session: AsyncSession = Depends(get_session)):
     """
-    Agentic RAG endpoint (LangGraph).
-    Flow: Retrieve -> Grade (Filter) -> Generate.
-    Requires 'thread_id' to maintain conversation history.
+    Stateful Agentic RAG with PostgreSQL Persistence.
+    The 'thread_id' in the request determines the conversation history.
     """
-    graph_builder = TitanGraph(session)
-    app_graph = graph_builder.build_graph()
+    titan_system = TitanGraph(session)
     config = {"configurable": {"thread_id": request.thread_id}}
 
-    final_state = await app_graph.ainvoke({"question": request.question}, config=config)
+    final_state = await titan_system.run({"question": request.question}, config=config)
 
     return {
         "answer": final_state["generation"],

@@ -1162,6 +1162,24 @@ langchain-core = ">=0.2.38"
 ormsgpack = ">=1.12.0"
 
 [[package]]
+name = "langgraph-checkpoint-postgres"
+version = "3.0.2"
+description = "Library with a Postgres implementation of LangGraph checkpoint saver."
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "langgraph_checkpoint_postgres-3.0.2-py3-none-any.whl", hash = "sha256:15c0fb638edfbc54d496f1758d0327d1a081e0ef94dda8f0c91d4b307d6d8545"},
+    {file = "langgraph_checkpoint_postgres-3.0.2.tar.gz", hash = "sha256:448cb8ec245b6fe10171a0f90e9aa047e24a9d3febba6a914644b0c1323da158"},
+]
+
+[package.dependencies]
+langgraph-checkpoint = ">=2.1.2,<4.0.0"
+orjson = ">=3.10.1"
+psycopg = ">=3.2.0"
+psycopg-pool = ">=3.2.0"
+
+[[package]]
 name = "langgraph-prebuilt"
 version = "1.0.5"
 description = "Library with high-level APIs for creating and executing LangGraph agents and tools."
@@ -2340,6 +2358,48 @@ files = [
     {file = "propcache-0.4.1-py3-none-any.whl", hash = "sha256:af2a6052aeb6cf17d3e46ee169099044fd8224cbaf75c76a2ef596e8163e2237"},
     {file = "propcache-0.4.1.tar.gz", hash = "sha256:f48107a8c637e80362555f37ecf49abe20370e557cc4ab374f04ec4423c97c3d"},
 ]
+
+[[package]]
+name = "psycopg"
+version = "3.3.2"
+description = "PostgreSQL database adapter for Python"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "psycopg-3.3.2-py3-none-any.whl", hash = "sha256:3e94bc5f4690247d734599af56e51bae8e0db8e4311ea413f801fef82b14a99b"},
+    {file = "psycopg-3.3.2.tar.gz", hash = "sha256:707a67975ee214d200511177a6a80e56e654754c9afca06a7194ea6bbfde9ca7"},
+]
+
+[package.dependencies]
+typing-extensions = {version = ">=4.6", markers = "python_version < \"3.13\""}
+tzdata = {version = "*", markers = "sys_platform == \"win32\""}
+
+[package.extras]
+binary = ["psycopg-binary (==3.3.2) ; implementation_name != \"pypy\""]
+c = ["psycopg-c (==3.3.2) ; implementation_name != \"pypy\""]
+dev = ["ast-comments (>=1.1.2)", "black (>=24.1.0)", "codespell (>=2.2)", "cython-lint (>=0.16)", "dnspython (>=2.1)", "flake8 (>=4.0)", "isort-psycopg", "isort[colors] (>=6.0)", "mypy (>=1.19.0)", "pre-commit (>=4.0.1)", "types-setuptools (>=57.4)", "types-shapely (>=2.0)", "wheel (>=0.37)"]
+docs = ["Sphinx (>=5.0)", "furo (==2022.6.21)", "sphinx-autobuild (>=2021.3.14)", "sphinx-autodoc-typehints (>=1.12)"]
+pool = ["psycopg-pool"]
+test = ["anyio (>=4.0)", "mypy (>=1.19.0) ; implementation_name != \"pypy\"", "pproxy (>=2.7)", "pytest (>=6.2.5)", "pytest-cov (>=3.0)", "pytest-randomly (>=3.5)"]
+
+[[package]]
+name = "psycopg-pool"
+version = "3.3.0"
+description = "Connection Pool for Psycopg"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "psycopg_pool-3.3.0-py3-none-any.whl", hash = "sha256:2e44329155c410b5e8666372db44276a8b1ebd8c90f1c3026ebba40d4bc81063"},
+    {file = "psycopg_pool-3.3.0.tar.gz", hash = "sha256:fa115eb2860bd88fce1717d75611f41490dec6135efb619611142b24da3f6db5"},
+]
+
+[package.dependencies]
+typing-extensions = ">=4.6"
+
+[package.extras]
+test = ["anyio (>=4.0)", "mypy (>=1.14)", "pproxy (>=2.7)", "pytest (>=6.2.5)", "pytest-cov (>=3.0)", "pytest-randomly (>=3.5)"]
 
 [[package]]
 name = "pydantic"
@@ -3614,6 +3674,19 @@ files = [
 typing-extensions = ">=4.12.0"
 
 [[package]]
+name = "tzdata"
+version = "2025.3"
+description = "Provider of IANA time zone data"
+optional = false
+python-versions = ">=2"
+groups = ["main"]
+markers = "sys_platform == \"win32\""
+files = [
+    {file = "tzdata-2025.3-py2.py3-none-any.whl", hash = "sha256:06a47e5700f3081aab02b2e513160914ff0694bce9947d6b76ebd6bf57cfc5d1"},
+    {file = "tzdata-2025.3.tar.gz", hash = "sha256:de39c2ca5dc7b0344f2eba86f49d614019d29f060fc4ebc8a417896a620b56a7"},
+]
+
+[[package]]
 name = "urllib3"
 version = "2.6.2"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
@@ -4092,4 +4165,4 @@ cffi = ["cffi (>=1.17,<2.0) ; platform_python_implementation != \"PyPy\" and pyt
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "22aaae00bcdb18c1437b45e5315f67c93e961161d9c77846cd31dbd7cc19019e"
+content-hash = "8ba447b917e3d7430c455d672d96da0ffe6b4928a2e7f5af9c4b2b765742d5fe"

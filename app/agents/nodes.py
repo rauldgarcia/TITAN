@@ -162,3 +162,18 @@ class AgentNodes:
         
         except Exception as e:
             return {"documents": [f"Error calculating: {e}"], "question": question}
+        
+def decide_to_generate_or_search(state: AgentState) -> str:
+    """
+    Determines wheter to generate an answer or perform a web search.
+    If any relevant documents were found, proceed to generation.
+    Otherwise, fall back to web search.
+    """
+    logger.info("---ASSESSING DOCUMENT QUALITY---")
+
+    if not state["documents"]:
+        logger.warning("No relevant documents found in DB. Falling back to web search.")
+        return "web_search"
+    else:
+        logger.info("Sufficient documents found. Proceeding to generation.")
+        return "generate"

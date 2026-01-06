@@ -1,32 +1,18 @@
 from langgraph.graph import END, StateGraph
-from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from app.agents.state import AgentState
-from app.agents.nodes import AgentNodes
-import logging
-
-logger = logging.getLogger(__name__)
-
-def decide_to_generate_or_search(state: AgentState) -> str:
-    """
-    Determines wheter to generate an answer or perform a web search.
-    If any relevant documents were found, proceed to generation.
-    Otherwise, fall back to web search.
-    """
-    logger.info("---ASSESSING DOCUMENT QUALITY---")
-
-    if not state["documents"]:
-        logger.warning("No relevant documents found in DB. Falling back to web search.")
-        return "web_search"
-    else:
-        logger.info("Sufficient documents found. Proceeding to generation.")
-        return "generate"
+from app.agents.nodes import AgentNodes, decide_to_generate_or_search
+from app.core.db_pool import get_pool
 
 class TitanGraph:
     def __init__(self, session):
+        self.session = session
         self.nodes = AgentNodes(session)
-        self.memory = MemorySaver()
 
-    def build_graph(self):
+    async def run(self, input_data: dict, config: dict):
+        """
+        Executes the workflow using the global connection pool for persistence.
+        """
         workflow = StateGraph(AgentState)
 
         workflow.add_node("retrieve", self.nodes.retrieve)
@@ -45,4 +31,9 @@ class TitanGraph:
         workflow.add_edge("web_search", "generate")
         workflow.add_edge("generate", END)
 
-        return workflow.compile(checkpointer=self.memory)
+        pool = get_pool()
+        checkpointer = AsyncPostgresSaver(pool)
+        await checkpointer.setup()
+        app = workflow.compile(checkpointer=checkpointer)
+
+        return await app.ainvoke(input_data, config)
