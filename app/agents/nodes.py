@@ -1,5 +1,4 @@
 import logging
-from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_ollama import ChatOllama
 from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
 from langchain_community.tools.tavily_search import TavilySearchResults
@@ -14,7 +13,8 @@ from app.core.prompts import (
     GRADER_PROMPT, 
     GENERATOR_PROMPT, 
     REPORT_PROMPT, 
-    QUANT_PROMPT
+    QUANT_PROMPT,
+    SUPERVISOR_PROMPT
 )
 
 logger = logging.getLogger(__name__)
@@ -23,8 +23,8 @@ templates_env = Environment(loader=FileSystemLoader("app/templates"))
 class AgentNodes:
     def __init__(self, session):
         self.retriever_service = RetrievalService(session)
-        self.grader_llm = ChatOllama(model="llama3.2", temperature=0, format="json")
-        self.generator_llm = ChatOllama(model="3.2", temperature=0)
+        self.router_llm = ChatOllama(model="llama3.2", temperature=0, format="json")
+        self.gen_llm = ChatOllama(model="llama3.2", temperature=0)
         self.web_search_tool = TavilySearchResults(max_results=3, tavily_api_key=settings.TAVILY_API_KEY)
         self.repl = PythonREPL()
 
@@ -52,7 +52,7 @@ class AgentNodes:
         documents = state["documents"]
         sources = state["sources"]
 
-        grader_chain = GRADER_PROMPT | self.grader_llm | JsonOutputParser()
+        grader_chain = GRADER_PROMPT | self.router_llm | JsonOutputParser()
 
         filtered_docs = []
         filtered_sources = []
@@ -126,7 +126,7 @@ class AgentNodes:
 
         prompt = REPORT_PROMPT.partial(format_instructions=parser.get_format_instructions())
 
-        chain = prompt | self.grader_llm | parser
+        chain = prompt | self.router_llm | parser
 
         try:
             logger.info("Extracting structured data...")
@@ -150,7 +150,7 @@ class AgentNodes:
         logger.info("---QUANT ANALYST (PYTHON)---")
         question = state["question"]
 
-        chain = QUANT_PROMPT | self.grader_llm | StrOutputParser
+        chain = QUANT_PROMPT | self.router_llm | StrOutputParser
 
         code = await chain.ainvoke({"question": question})
 
@@ -162,8 +162,51 @@ class AgentNodes:
         
         except Exception as e:
             return {"documents": [f"Error calculating: {e}"], "question": question}
+
+    async def supervisor_node(self, state: AgentState) -> AgentState:
+        logger.info("---SUPERVISOR: ROUTING---")
+        question = state["question"]
+        docs = state.get("documents", [])
+
+        current_step = state.get("loop_step", 0)
+        logger.info(f"Loop Step: {current_step}")
+
+        chain = SUPERVISOR_PROMPT | self.router_llm | JsonOutputParser()
+
+        try:
+            result = await chain.ainvoke({"question": question, "len_docs": len(docs)})
+            next_step = result.get("next_step", "reporter_agent")
+            logger.info(f"Supervisor decided: {next_step}")
+            return {"next_step": next_step, "loop_step": 1}
+        except Exception as e:
+            logger.error(f"Supervisor failed: {e}. Defaulting to reporter.")
+            return {"next_step": "reporter_agent", "loop_step": 1}
         
-def decide_to_generate_or_search(state: AgentState) -> str:
+    async def quant_agent(self, state: AgentState) -> AgentState:
+        logger.info("--- QUANT AGENT: CODING ---")
+        question = state["question"]
+
+        chain = QUANT_PROMPT | self.gen_llm | StrOutputParser()
+        code = await chain.ainvoke({"question": question})
+
+        code = code.replace("```python", "").replace("```", "").strip()
+
+        try:
+            logger.info(f"Executing: \n {code}")
+            result = self.repl.run(code)
+
+            output_msg = f"Python Analysis Result for '{question}': \n{result}"
+            logger.info(f"Result: {result}")
+
+            current_docs = state.get("documents", [])
+            current_docs.append(output_msg)
+            return {"documents": current_docs}
+        
+        except Exception as e:
+            logger.error(f"Quant failed: {e}")
+            return {"documents": [f"Error in calculation: {e}"]}
+
+def decide_to_search_or_not(state: AgentState) -> str:
     """
     Determines wheter to generate an answer or perform a web search.
     If any relevant documents were found, proceed to generation.
@@ -176,4 +219,4 @@ def decide_to_generate_or_search(state: AgentState) -> str:
         return "web_search"
     else:
         logger.info("Sufficient documents found. Proceeding to generation.")
-        return "generate"
+        return "supervisor"

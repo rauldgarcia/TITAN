@@ -88,7 +88,10 @@ async def agent_chat(request: AgentRequest, session: AsyncSession = Depends(get_
     The 'thread_id' in the request determines the conversation history.
     """
     titan_system = TitanGraph(session)
-    config = {"configurable": {"thread_id": request.thread_id}}
+    config = {
+        "configurable": {"thread_id": request.thread_id},
+        "recursion_limit": 50
+        }
 
     final_state = await titan_system.run({"question": request.question}, config=config)
 
