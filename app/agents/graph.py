@@ -28,6 +28,8 @@ class TitanGraph:
             return "retrieve"
         elif next_node == "quant_agent":
             return "quant_agent"
+        elif next_node == "market_agent":
+            return "market_agent"
         elif next_node == "reporter_agent":
             return "reporter_agent"
         else:
@@ -46,6 +48,7 @@ class TitanGraph:
         workflow.add_node("retrieve", self.nodes.retrieve)
         workflow.add_node("grade_documents", self.nodes.grade_documents)
         workflow.add_node("web_search", self.nodes.web_search)
+        workflow.add_node("market_agent", self.nodes.market_agent)
 
         workflow.set_entry_point("supervisor")
 
@@ -53,7 +56,8 @@ class TitanGraph:
             "supervisor", self.route_supervisor, {
                 "retrieve": "retrieve",
                 "quant_agent": "quant_agent",
-                "reporter_agent": "reporter_agent"
+                "reporter_agent": "reporter_agent",
+                "market_agent": "market_agent"
                 }
             )
 
@@ -65,8 +69,11 @@ class TitanGraph:
                 "supervisor": "supervisor"
                 }
             )
+        
         workflow.add_edge("web_search", "supervisor")
         workflow.add_edge("quant_agent", "supervisor")
+        workflow.add_edge("market_agent", "supervisor")
+
         workflow.add_edge("reporter_agent", END)
 
         pool = get_pool()

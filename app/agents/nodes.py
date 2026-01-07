@@ -9,6 +9,7 @@ from app.agents.state import AgentState
 from app.services.retriever import RetrievalService
 from app.core.config import settings
 from app.schemas.report_schema import FinancialSummary
+from app.core.mcp_client import load_mcp_tools
 from app.core.prompts import (
     GRADER_PROMPT, 
     GENERATOR_PROMPT, 
@@ -27,6 +28,7 @@ class AgentNodes:
         self.gen_llm = ChatOllama(model="llama3.2", temperature=0)
         self.web_search_tool = TavilySearchResults(max_results=3, tavily_api_key=settings.TAVILY_API_KEY)
         self.repl = PythonREPL()
+        self.market_tools = []
 
     async def retrieve(self, state: AgentState) -> AgentState:
         """
@@ -167,11 +169,14 @@ class AgentNodes:
         logger.info("---SUPERVISOR: ROUTING---")
         question = state["question"]
         docs = state.get("documents", [])
-
         current_step = state.get("loop_step", 0)
         logger.info(f"Loop Step: {current_step}")
 
         chain = SUPERVISOR_PROMPT | self.router_llm | JsonOutputParser()
+
+        if current_step > 0 and docs:
+            logger.info("Supervisor Logic: Data present and loop active -> Forcing Reporter.")
+            return {"next_step": "reporter_agent", "loop_step": 1}
 
         try:
             result = await chain.ainvoke({"question": question, "len_docs": len(docs)})
@@ -205,6 +210,31 @@ class AgentNodes:
         except Exception as e:
             logger.error(f"Quant failed: {e}")
             return {"documents": [f"Error in calculation: {e}"]}
+
+    async def initialize_tools(self):
+        if not self.market_tools:
+            self.market_tools = await load_mcp_tools()
+
+    async def market_agent(self, state: AgentState) -> AgentState:
+        logger.info("---MARKET AGENT (MCP)---")
+        question = state["question"]
+        await self.initialize_tools()
+        
+        if not self.market_tools:
+            return {"documents": ["Error: Market tools unavailable."]}
+        
+        words = question.split()
+        ticker = next((w for w in words if w.isupper() and len(w) <= 5), "AAPL")
+        results = []
+
+        for tool in self.market_tools:
+            try:
+                res = await tool.coroutine(ticker)
+                results.append(f"[{tool.name}]: {res}")
+            except Exception as e:
+                logger.error(f"Tool error: {e}")
+
+        return {"documents": results}
 
 def decide_to_search_or_not(state: AgentState) -> str:
     """

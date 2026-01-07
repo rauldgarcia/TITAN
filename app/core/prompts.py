@@ -75,6 +75,7 @@ WORKERS:
 1. 'research_agent': For finding information, reading reports, identifying risks.
 2. 'quant_agent': ONLY for explicit mathematical calculations using Python.
 3. 'reporter_agent': When you have sufficient information OR A CALCULATION RESULT to answer the request.
+4. 'market_agent': For real-time stock prices, market cap, and sector info via Yahoo Finance.
 
 INSTRUCTIONS:
 - CRITICAL: If the 'Current Documents Found' already contains a "Python Analysis Result" or "Calculation Result", DO NOT send it back to 'quant_agent'. Send it to 'reporter_agent'.
