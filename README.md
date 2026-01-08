@@ -1,118 +1,224 @@
 # 🏦 TITAN: Autonomous Financial Intelligence Platform
 
-[![LangSmith](https://img.shields.io/badge/Observability-LangSmith-blue?style=flat&logo=langchain)](https://smith.langchain.com/) [![MCP](https://img.shields.io/badge/Integration-MCP-4B32C3?style=flat&logo=anthropic&logoColor=white)](https://modelcontextprotocol.io/) [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/) [![Postgres](https://img.shields.io/badge/DB-PostgreSQL_16-336791?style=flat&logo=postgresql&logoColor=white)](https://www.postgresql.org/) [![Tailwind](https://img.shields.io/badge/UI-TailwindCSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+**A Hierarchical Multi-Agent System for Deep Financial Auditing & Strategy Analysis**
 
-**TITAN** is an advanced Multi-Agent System designed to perform deep financial analysis and audit tasks on SEC 10-K filings. It employs a **Hierarchical Agentic Architecture** powered by LangGraph, where a Supervisor delegates tasks to specialized workers (Research, Quant, Market Data, Reporting).
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/) [![LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-FF4B4B?style=flat&logo=langchain&logoColor=white)](https://python.langchain.com/docs/langgraph) [![MCP](https://img.shields.io/badge/Integration-MCP-4B32C3?style=flat&logo=anthropic&logoColor=white)](https://modelcontextprotocol.io/) [![Postgres](https://img.shields.io/badge/DB-PostgreSQL_16-336791?style=flat&logo=postgresql&logoColor=white)](https://www.postgresql.org/) [![LangSmith](https://img.shields.io/badge/Observability-LangSmith-blue?style=flat&logo=langchain)](https://smith.langchain.com/) [![Tailwind](https://img.shields.io/badge/Reporting-TailwindCSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
 ---
 
-## 🧠 Agentic Architecture (The "Deep Analyzer")
+## 📖 Executive Summary
 
-TITAN utilizes a **Supervisor-Worker** topology with **Human-in-the-Loop (HITL)** capabilities for error recovery. If the Quant Agent fails (e.g., Python math error), the system pauses execution and waits for manual intervention.
+**TITAN** is not just a chatbot; it is an autonomous **Financial Analysis Engine** engineered to mimic the workflow of a human audit team. It moves beyond simple RAG by employing a **Supervisor-Worker Architecture** where a central orchestrator delegates tasks to specialized agents (Researchers, Quants, Market Analysts) to solve complex financial queries.
+
+The system features **Self-Correction** mechanisms, **Real-Time Data Injection** via MCP, and a **Human-in-the-Loop (HITL)** protocol to handle execution failures gracefully, ensuring enterprise-grade reliability.
+
+---
+
+## 🏗️ System Architecture
+
+TITAN implements a **Stateful Hierarchical Graph**. The state is persisted in PostgreSQL, allowing for long-running analysis sessions that survive service restarts.
+
+### The "Deep Analyzer" Topology
 
 ```mermaid
     graph TD
         User[User Request] --> Supervisor{SUPERVISOR NODE}
 
-        Supervisor -- "Need History/Risks" --> Research[Research Agent]
-        Supervisor -- "Need Math/Ratios" --> Quant[Quant Agent]
+        %% Delegation Paths
+        Supervisor -- "Need Context/Risks" --> Research[Research Agent]
+        Supervisor -- "Need Complex Math" --> Quant[Quant Agent]
         Supervisor -- "Need Live Price" --> Market[Market Agent]
         Supervisor -- "Analysis Complete" --> Reporter[Reporter Agent]
 
-        subgraph "Research Branch"
-            Research --> DB[Vector DB]
-            DB --> Grade{Relevance?}
-            Grade -- Poor --> Web[Web Search]
-            Grade -- Good --> Return1[Return Findings]
+        %% Research Sub-Graph
+        subgraph "Research Branch (CRAG)"
+            Research --> DB[Vector DB (pgvector)]
+            DB --> Grade{Relevance Check}
+            Grade -- "Irrelevant" --> Web[Web Search (Tavily)]
+            Grade -- "Relevant" --> Return1[Return Findings]
             Web --> Return1
         end
 
-        subgraph "Quant Branch (HITL Enabled)"
+        %% Quant Sub-Graph
+        subgraph "Quant Branch (HITL)"
             Quant --> Code[Python REPL]
-            Code -- Success --> Return2[Return Calculation]
-            Code -- Error --> Pause[Human Intervention Node]
-            Pause -- Resume/Patch --> Supervisor
+            Code -- "Success" --> Return2[Return Calculation]
+            Code -- "Runtime Error" --> Pause[Human Intervention]
+            Pause -- "Manual Patch" --> Supervisor
         end
 
+        %% Market Sub-Graph
         subgraph "Market Data (MCP)"
             Market --> Client[MCP Client]
             Client <--> Server[Yahoo Finance Server]
             Client --> Return3[Return Live Data]
         end
 
+        %% Feedback Loops
         Return1 --> Supervisor
         Return2 --> Supervisor
         Return3 --> Supervisor
 
+        %% Output
         Reporter --> HTML[HTML Dashboard] --> End((End))
 ```
 
 ---
 
-## 🎮 Human-in-the-Loop Protocol (Error Recovery)
+## 🛠️ Tech Stack & Engineering Standards
 
-TITAN implements a **"Pause & Resume"** mechanism for handling critical failures during execution.
-
-### 1\. Detection & Pause
-
-If the **Quant Agent** encounters a runtime error, the graph state transitions to \`human_intervention\` and pauses.
-
-    // API Response (Status 200)
-    {
-      "status": "PAUSED",
-      "message": "Agent paused for human intervention.",
-      "error": "Quant execution failed: ZeroDivisionError"
-    }
-
-### 2\. Inspection
-
-    GET /agent/state/{thread_id}
-
-### 3\. Manual Correction (Patch)
-
-The operator can inject the correct value or instruction to bypass the faulty node.
-
-    POST /agent/resume
-    {
-      "thread_id": "session_123",
-      "new_instructions": "The calculated Debt-to-Equity ratio is 1.5"
-    }
+- **Core Framework:** Python 3.12+, FastAPI (Async), Pydantic v2.
+- **Agent Orchestration:** LangGraph with **AsyncPostgresSaver** for production-grade persistence using Connection Pooling (`psycopg-pool`).
+- **Vector Database:** PostgreSQL 16 with `pgvector` extension.
+- **Embedding Engine:** Local GPU-accelerated inference using `sentence-transformers` (CUDA).
+- **Interoperability:** **Model Context Protocol (MCP)** for standardized connection to external data sources (Yahoo Finance).
+- **Data Engineering:** Custom ETL pipeline using \`sec-edgar-downloader\` and \`BeautifulSoup4\` for high-fidelity HTML parsing.
+- **Code Execution:** Sandboxed Python REPL for deterministic mathematical operations.
+- **Observability:** Full trace monitoring via **LangSmith**.
+- **Reporting:** Jinja2 templating engine generating responsive TailwindCSS reports.
 
 ---
 
-## 🏗️ Architecture & Tech Stack
+## 🚀 Getting Started
 
-- **Core Backend:** Python 3.12+, FastAPI (Async), SQLModel.
-- **Orchestration:** LangGraph (Hierarchical StateGraph with PostgreSQL Persistence).
-- **Connectivity:** **Model Context Protocol (MCP)** client/server architecture for external data.
-- **Database:** PostgreSQL 16 + `pgvector` (Dockerized).
-- **Inference:** Local LLMs via **Ollama** (Llama 3.2).
-- **Resilience:** Human-in-the-Loop (HITL) checkpoints and Circuit Breakers.
-- **Reporting:** Jinja2 + TailwindCSS (Glassmorphism UI).
+### 1\. Prerequisites
+
+- Python 3.12+ (Managed via **Poetry**)
+- Docker & Docker Compose
+- NVIDIA GPU (Recommended for Vectorization)
+- **Ollama** running locally (`ollama serve`) with \`llama3.2\`.
+
+### 2\. Environment Configuration
+
+Create a \`.env\` file in the root directory:
+
+    # Database
+    POSTGRES_USER=titan_user
+    POSTGRES_PASSWORD=titan_password
+    POSTGRES_SERVER=localhost
+    POSTGRES_PORT=5432
+    POSTGRES_DB=titan_db
+
+    # External Tools
+    TAVILY_API_KEY=tvly-xxxxxxxxxxxx
+    LANGCHAIN_API_KEY=lsv2_xxxxxxxx (Optional for Tracing)
+    LANGCHAIN_TRACING_V2=true
+    LANGCHAIN_PROJECT=TITAN-Platform
+
+### 3\. Installation & Deployment
+
+    # 1. Clone Repository
+    git clone https://github.com/rauldgarcia/titan-platform.git
+    cd titan-platform
+
+    # 2. Install Dependencies
+    poetry install
+
+    # 3. Provision Infrastructure (DB + pgAdmin)
+    sudo docker compose up -d
+
+    # 4. Start the API Server
+    poetry run uvicorn app.main:app --reload
+
+---
+
+## 📊 Data Ingestion Pipeline (ETL)
+
+Before querying, you must populate the Vector Database with SEC Filings.
+
+    # Step 1: Download 10-K Filings (AAPL, MSFT, TSLA)
+    poetry run python scripts/ingest/download_sec.py
+
+    # Step 2: Clean and Normalize HTML
+    poetry run python scripts/ingest/clean_data.py
+
+    # Step 3: Vectorize and Load to Postgres (Uses GPU)
+    poetry run python scripts/ingest/vectorize.py
+
+---
+
+## 🧪 Testing & Capabilities Playbook
+
+Once the system is running, you can test its distinct capabilities via the Swagger UI (\`http://localhost:8000/docs\`) or cURL.
+
+### Scenario A: Deep Strategic Analysis (Supervisor + Research)
+
+_Demonstrates RAG, Document Grading, and HTML Reporting._
+
+    POST /chat/agent
+    {
+      "question": "Analyze the strategic outlook and key risk factors for Apple (AAPL)",
+      "thread_id": "audit_session_01"
+    }
+
+### Scenario B: Real-Time Market Data (MCP Integration)
+
+_Demonstrates the Model Context Protocol connecting to the custom Yahoo Finance server._
+
+    POST /chat/agent
+    {
+      "question": "What is the current stock price of NVIDIA and its market cap?",
+      "thread_id": "market_session_01"
+    }
+
+### Scenario C: Quantitative Reasoning (Python Tool)
+
+_Demonstrates the Quant Agent writing and executing code._
+
+    POST /chat/agent
+    {
+      "question": "Calculate the Debt-to-Revenue ratio for Microsoft assuming 50B debt and 200B revenue.",
+      "thread_id": "quant_session_01"
+    }
+
+### Scenario D: Human-in-the-Loop (Error Recovery)
+
+_Demonstrates resilience. If the Quant Agent fails (e.g., division by zero), the system pauses._
+
+    # 1. Check Status (Will return "PAUSED")
+    GET /agent/state/quant_session_01
+
+    # 2. Patch & Resume
+    POST /agent/resume
+    {
+      "thread_id": "quant_session_01",
+      "new_instructions": "The calculated ratio is 0.25"
+    }
 
 ---
 
 ## 🗺️ Project Roadmap
 
-### ✅ Completed Phases
+### ✅ Completed Milestones
 
-- **Phase 1: Foundation** (DB, Docker, Async Config).
-- **Phase 2: Data Engineering** (ETL, SEC Parsing).
-- **Phase 3: The Brain** (Vector Search, Embeddings).
-- **Phase 4: Agentic Workflow v1** (Self-Correction, Web Search).
+- **Phase 1: Foundation**
+  - \[x\] Environment Setup (Poetry, Docker, Git).
+  - \[x\] Async Database Layer (Postgres + pgvector).
+- **Phase 2: Data Engineering (ETL)**
+  - \[x\] SEC Downloader Script.
+  - \[x\] HTML-to-Text Parser (BeautifulSoup).
+  - \[x\] GPU-Accelerated Vectorization (SentenceTransformers).
+- **Phase 3: The Brain (Inference)**
+  - \[x\] Semantic Search Service (Cosine Similarity).
+  - \[x\] RAG Integration with Local LLMs (Ollama).
+- **Phase 4: Agentic Workflow v1**
+  - \[x\] LangGraph State Definition.
+  - \[x\] Self-Correction Logic (CRAG).
+  - \[x\] Web Search Fallback (Tavily).
+  - \[x\] **Reporting Engine:** Jinja2 + TailwindCSS HTML Generation.
 - **Phase 5: Advanced Orchestration (The "Deep Analyzer")**
-  - \[x\] **Persistent Memory:** Replace in-memory checkpointer with PostgreSQL persistence.
-  - \[x\] **Hierarchical Agents:** Supervisor-Worker topology.
-  - \[x\] **Quantitative Tool:** Python REPL integration.
-  - \[x\] **MCP Integration:** Real-time market data via Model Context Protocol.
-  - \[x\] **Human-in-the-Loop:** Error recovery mechanism via API checkpoints.
+  - \[x\] **Persistent Memory:** Postgres-backed thread persistence with Connection Pooling.
+  - \[x\] **Hierarchical Architecture:** Supervisor-Worker topology.
+  - \[x\] **Quantitative Tool:** Python REPL integration for math.
+  - \[x\] **MCP Integration:** Custom Yahoo Finance MCP Server.
+  - \[x\] **Resilience:** Human-in-the-Loop (HITL) error recovery.
 
-### 🚧 In Progress & Future Steps
+### 🚧 Upcoming Phases
 
-- **Phase 6: MLOps & Quality Engineering**
-  - \[ \] **Unit & Integration Testing:** Comprehensive Pytest suite for agents and API.
-  - \[ \] **CI/CD Pipelines:** GitHub Actions for automated linting, testing, and Docker builds.
-  - \[ \] **Evaluation:** Implement RAGAS to measure retrieval accuracy.
+- **Phase 6: MLOps & Quality Engineering (Next Sprint)**
+  - \[ \] **Testing:** Unit & Integration Testing suite (Pytest).
+  - \[ \] **CI/CD:** GitHub Actions for automated linting and Docker builds.
+  - \[ \] **Evaluation:** RAGAS metrics implementation.
 - **Phase 7: Full Stack Experience**
   - \[ \] **Frontend Client:** React Application.
   - \[ \] **Cloud Deployment:** Deploy backend to GCP Cloud Run.
