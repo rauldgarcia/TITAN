@@ -22,45 +22,45 @@ TITAN implements a **Stateful Hierarchical Graph**. The state is persisted in Po
 
 ```mermaid
     graph TD
-        User[User Request] --> Supervisor{SUPERVISOR NODE}
+    User[User Request] --> Supervisor{SUPERVISOR NODE}
 
-        %% Delegation Paths
-        Supervisor -- "Need Context/Risks" --> Research[Research Agent]
-        Supervisor -- "Need Complex Math" --> Quant[Quant Agent]
-        Supervisor -- "Need Live Price" --> Market[Market Agent]
-        Supervisor -- "Analysis Complete" --> Reporter[Reporter Agent]
+    %% Delegation Paths
+    Supervisor -- "Need Context/Risks" --> Research[Research Agent]
+    Supervisor -- "Need Complex Math" --> Quant[Quant Agent]
+    Supervisor -- "Need Live Price" --> Market[Market Agent]
+    Supervisor -- "Analysis Complete" --> Reporter[Reporter Agent]
 
-        %% Research Sub-Graph
-        subgraph "Research Branch (CRAG)"
-            Research --> DB[Vector DB (pgvector)]
-            DB --> Grade{Relevance Check}
-            Grade -- "Irrelevant" --> Web[Web Search (Tavily)]
-            Grade -- "Relevant" --> Return1[Return Findings]
-            Web --> Return1
-        end
+    %% Research Sub-Graph
+    subgraph "Research Branch (CRAG)"
+        Research --> DB["Vector DB (pgvector)"]
+        DB --> Grade{"Relevance Check"}
+        Grade -- "Irrelevant" --> Web["Web Search (Tavily)"]
+        Grade -- "Relevant" --> Return1[Return Findings]
+        Web --> Return1
+    end
 
-        %% Quant Sub-Graph
-        subgraph "Quant Branch (HITL)"
-            Quant --> Code[Python REPL]
-            Code -- "Success" --> Return2[Return Calculation]
-            Code -- "Runtime Error" --> Pause[Human Intervention]
-            Pause -- "Manual Patch" --> Supervisor
-        end
+    %% Quant Sub-Graph
+    subgraph "Quant Branch (HITL)"
+        Quant --> Code[Python REPL]
+        Code -- "Success" --> Return2[Return Calculation]
+        Code -- "Runtime Error" --> Pause[Human Intervention]
+        Pause -- "Manual Patch" --> Supervisor
+    end
 
-        %% Market Sub-Graph
-        subgraph "Market Data (MCP)"
-            Market --> Client[MCP Client]
-            Client <--> Server[Yahoo Finance Server]
-            Client --> Return3[Return Live Data]
-        end
+    %% Market Sub-Graph
+    subgraph "Market Data (MCP)"
+        Market --> Client[MCP Client]
+        Client <--> Server[Yahoo Finance Server]
+        Client --> Return3[Return Live Data]
+    end
 
-        %% Feedback Loops
-        Return1 --> Supervisor
-        Return2 --> Supervisor
-        Return3 --> Supervisor
+    %% Feedback Loops
+    Return1 --> Supervisor
+    Return2 --> Supervisor
+    Return3 --> Supervisor
 
-        %% Output
-        Reporter --> HTML[HTML Dashboard] --> End((End))
+    %% Output
+    Reporter --> HTML[HTML Dashboard] --> End((End))
 ```
 
 ---
