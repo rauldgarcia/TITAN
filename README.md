@@ -1,11 +1,6 @@
 # 🏦 TITAN: Autonomous Financial Intelligence Platform
 
-[![LangSmith](https://img.shields.io/badge/Observability-LangSmith-blue?style=flat&logo=langchain)](https://smith.langchain.com/)
-[![LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-FF4B4B?style=flat&logo=langchain&logoColor=white)](https://python.langchain.com/docs/langgraph)
-[![MCP](https://img.shields.io/badge/Integration-MCP-4B32C3?style=flat&logo=anthropic&logoColor=white)](https://modelcontextprotocol.io/)
-[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Postgres](https://img.shields.io/badge/DB-PostgreSQL_16-336791?style=flat&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Tailwind](https://img.shields.io/badge/UI-TailwindCSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![LangSmith](https://img.shields.io/badge/Observability-LangSmith-blue?style=flat&logo=langchain)](https://smith.langchain.com/) [![MCP](https://img.shields.io/badge/Integration-MCP-4B32C3?style=flat&logo=anthropic&logoColor=white)](https://modelcontextprotocol.io/) [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/) [![Postgres](https://img.shields.io/badge/DB-PostgreSQL_16-336791?style=flat&logo=postgresql&logoColor=white)](https://www.postgresql.org/) [![Tailwind](https://img.shields.io/badge/UI-TailwindCSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
 **TITAN** is an advanced Multi-Agent System designed to perform deep financial analysis and audit tasks on SEC 10-K filings. It employs a **Hierarchical Agentic Architecture** powered by LangGraph, where a Supervisor delegates tasks to specialized workers (Research, Quant, Market Data, Reporting).
 
@@ -13,7 +8,7 @@
 
 ## 🧠 Agentic Architecture (The "Deep Analyzer")
 
-TITAN utilizes a **Supervisor-Worker** topology with **Model Context Protocol (MCP)** integration. The Supervisor orchestrates a team of agents, maintaining a feedback loop until the analysis is comprehensive.
+TITAN utilizes a **Supervisor-Worker** topology with **Human-in-the-Loop (HITL)** capabilities for error recovery. If the Quant Agent fails (e.g., Python math error), the system pauses execution and waits for manual intervention.
 
 ```mermaid
     graph TD
@@ -32,9 +27,11 @@ TITAN utilizes a **Supervisor-Worker** topology with **Model Context Protocol (M
             Web --> Return1
         end
 
-        subgraph "Quant Branch"
+        subgraph "Quant Branch (HITL Enabled)"
             Quant --> Code[Python REPL]
-            Code --> Return2[Return Calculation]
+            Code -- Success --> Return2[Return Calculation]
+            Code -- Error --> Pause[Human Intervention Node]
+            Pause -- Resume/Patch --> Supervisor
         end
 
         subgraph "Market Data (MCP)"
@@ -52,25 +49,34 @@ TITAN utilizes a **Supervisor-Worker** topology with **Model Context Protocol (M
 
 ---
 
-## 🧪 Analysis Capabilities & Examples
+## 🎮 Human-in-the-Loop Protocol (Error Recovery)
 
-TITAN can handle various types of financial queries, from simple retrieval to complex multi-step reasoning.
+TITAN implements a **"Pause & Resume"** mechanism for handling critical failures during execution.
 
-### 1\. Deep Strategic Analysis (RAG + Reasoning)
+### 1\. Detection & Pause
 
-    "Analyze the key risk factors and strategic outlook for Apple (AAPL) based on their latest 10-K."
+If the **Quant Agent** encounters a runtime error, the graph state transitions to \`human_intervention\` and pauses.
 
-### 2\. Quantitative Analysis (RAG + Python Calculation)
+    // API Response (Status 200)
+    {
+      "status": "PAUSED",
+      "message": "Agent paused for human intervention.",
+      "error": "Quant execution failed: ZeroDivisionError"
+    }
 
-    "Based on Microsoft's revenue and total debt mentioned in the report, calculate the Debt-to-Revenue ratio."
+### 2\. Inspection
 
-### 3\. Real-Time Market Insight (MCP Integration)
+    GET /agent/state/{thread_id}
 
-    "What is the current stock price of NVIDIA and its market cap right now?"
+### 3\. Manual Correction (Patch)
 
-### 4\. Hybrid Reasoning (The "Deep Analyzer")
+The operator can inject the correct value or instruction to bypass the faulty node.
 
-    "Get the current price of Tesla using market tools, then compare it with the risks mentioned in their annual report. Is the market sentiment aligned with their operational risks?"
+    POST /agent/resume
+    {
+      "thread_id": "session_123",
+      "new_instructions": "The calculated Debt-to-Equity ratio is 1.5"
+    }
 
 ---
 
@@ -81,10 +87,7 @@ TITAN can handle various types of financial queries, from simple retrieval to co
 - **Connectivity:** **Model Context Protocol (MCP)** client/server architecture for external data.
 - **Database:** PostgreSQL 16 + `pgvector` (Dockerized).
 - **Inference:** Local LLMs via **Ollama** (Llama 3.2).
-- **Tools:**
-  - **Yahoo Finance (MCP):** Real-time market data server.
-  - **Tavily AI:** Web Search fallback.
-  - **Python REPL:** Sandboxed code execution.
+- **Resilience:** Human-in-the-Loop (HITL) checkpoints and Circuit Breakers.
 - **Reporting:** Jinja2 + TailwindCSS (Glassmorphism UI).
 
 ---
@@ -93,36 +96,25 @@ TITAN can handle various types of financial queries, from simple retrieval to co
 
 ### ✅ Completed Phases
 
-- **Phase 1: Foundation**
-  - \[x\] Environment Setup (Poetry, Docker, Git).
-  - \[x\] Async Database Layer (Postgres + pgvector).
-- **Phase 2: Data Engineering (ETL)**
-  - \[x\] SEC Downloader Script.
-  - \[x\] HTML-to-Text Parser (BeautifulSoup).
-  - \[x\] GPU-Accelerated Vectorization (SentenceTransformers).
-- **Phase 3: The Brain (Inference)**
-  - \[x\] Semantic Search Service (Cosine Similarity).
-  - \[x\] RAG Integration with Local LLMs (Ollama).
-- **Phase 4: Agentic Workflow v1**
-  - \[x\] LangGraph State Definition.
-  - \[x\] Self-Correction Logic (Document Grader).
-  - \[x\] Web Search Fallback (Tavily).
-  - \[x\] **Reporting Engine:** Jinja2 + TailwindCSS HTML Generation.
-  - \[x\] **Refactoring:** Centralized Prompts & Clean Architecture.
+- **Phase 1: Foundation** (DB, Docker, Async Config).
+- **Phase 2: Data Engineering** (ETL, SEC Parsing).
+- **Phase 3: The Brain** (Vector Search, Embeddings).
+- **Phase 4: Agentic Workflow v1** (Self-Correction, Web Search).
 - **Phase 5: Advanced Orchestration (The "Deep Analyzer")**
-  - \[x\] **Persistent Memory:** Replace in-memory checkpointer with PostgreSQL persistence (Long-running threads).
-  - \[x\] **Hierarchical Agents:** Implement a "Supervisor" node to delegate tasks.
-  - \[x\] **Quantitative Tool:** Connect Python REPL for real-time financial calculations.
-  - \[x\] **Model Context Protocol (MCP):** Integrate custom Yahoo Finance server for real-time market data.
+  - \[x\] **Persistent Memory:** Replace in-memory checkpointer with PostgreSQL persistence.
+  - \[x\] **Hierarchical Agents:** Supervisor-Worker topology.
+  - \[x\] **Quantitative Tool:** Python REPL integration.
+  - \[x\] **MCP Integration:** Real-time market data via Model Context Protocol.
+  - \[x\] **Human-in-the-Loop:** Error recovery mechanism via API checkpoints.
 
 ### 🚧 In Progress & Future Steps
 
 - **Phase 6: MLOps & Quality Engineering**
   - \[ \] **Unit & Integration Testing:** Comprehensive Pytest suite for agents and API.
   - \[ \] **CI/CD Pipelines:** GitHub Actions for automated linting, testing, and Docker builds.
-  - \[ \] **Evaluation:** Implement RAGAS to measure retrieval accuracy and hallucination rates.
+  - \[ \] **Evaluation:** Implement RAGAS to measure retrieval accuracy.
 - **Phase 7: Full Stack Experience**
-  - \[ \] **Frontend Client:** React Application for chat interface and report visualization.
+  - \[ \] **Frontend Client:** React Application.
   - \[ \] **Cloud Deployment:** Deploy backend to GCP Cloud Run.
 
 ---

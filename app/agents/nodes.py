@@ -4,6 +4,7 @@ from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_experimental.utilities import PythonREPL
 from jinja2 import Environment, FileSystemLoader
+from typing import Literal
 
 from app.agents.state import AgentState
 from app.services.retriever import RetrievalService
@@ -186,7 +187,7 @@ class AgentNodes:
         except Exception as e:
             logger.error(f"Supervisor failed: {e}. Defaulting to reporter.")
             return {"next_step": "reporter_agent", "loop_step": 1}
-        
+
     async def quant_agent(self, state: AgentState) -> AgentState:
         logger.info("--- QUANT AGENT: CODING ---")
         question = state["question"]
@@ -200,16 +201,23 @@ class AgentNodes:
             logger.info(f"Executing: \n {code}")
             result = self.repl.run(code)
 
+            if "Error" in result or "Traceback" in result:
+                raise Exception(result)
+
             output_msg = f"Python Analysis Result for '{question}': \n{result}"
             logger.info(f"Result: {result}")
 
             current_docs = state.get("documents", [])
             current_docs.append(output_msg)
-            return {"documents": current_docs}
+            return {"documents": current_docs, "error_message": None}
         
         except Exception as e:
-            logger.error(f"Quant failed: {e}")
-            return {"documents": [f"Error in calculation: {e}"]}
+            error_msg = f"Quant execution failed: {str(e)}"
+            logger.error(f"{error_msg}. ESCALATING TO HUMAN.")
+            return {
+                "error_message": error_msg,
+                "next_step": "human_intervention"
+            }
 
     async def initialize_tools(self):
         if not self.market_tools:
@@ -236,17 +244,56 @@ class AgentNodes:
 
         return {"documents": results}
 
-def decide_to_search_or_not(state: AgentState) -> str:
-    """
-    Determines wheter to generate an answer or perform a web search.
-    If any relevant documents were found, proceed to generation.
-    Otherwise, fall back to web search.
-    """
-    logger.info("---ASSESSING DOCUMENT QUALITY---")
+    async def human_node(self, state: AgentState) -> AgentState:
+        """
+        This node doesn't do anything automatically.
+        It's a placeholder where the graph will pause.
+        When the human 'resume', this node executes and clears the error.
+        """
+        logger.info("---HUMAN INTERVENTION NODE---")
+        logger.info("Human has updated the state. Resuming workflow...")
+        return {"error_message": None, "next_step": "reporter_agent"}
 
-    if not state["documents"]:
-        logger.warning("No relevant documents found in DB. Falling back to web search.")
-        return "web_search"
-    else:
-        logger.info("Sufficient documents found. Proceeding to generation.")
-        return "supervisor"
+    async def route_supervisor(self, state:AgentState) -> Literal["retrieve", "quant_agent", "market_agent", "human_intervention", "reporter_agent"]:
+        next_node = state.get("next_step")
+        current_step = state.get("loop_step", 0)
+        max_loops = 15
+
+        if current_step >= max_loops:
+            logger.warning("Max loops ({max_loops}) reached. Forcing report generation.")
+            return "reporter_agent"
+
+        logger.info(f"Router directing to: {next_node}")
+
+        if next_node == "research_agent":
+            return "retrieve"
+        elif next_node == "quant_agent":
+            return "quant_agent"
+        elif next_node == "market_agent":
+            return "market_agent"
+        elif next_node == "human_intervention":
+            return "human_intervention"
+        elif next_node == "reporter_agent":
+            return "reporter_agent"
+        else:
+            return "reporter_agent"
+
+    async def route_search(self, state: AgentState) -> Literal["web_search", "supervisor"]:
+        """
+        Determines wheter to generate an answer or perform a web search.
+        If any relevant documents were found, proceed to generation.
+        Otherwise, fall back to web search.
+        """
+        logger.info("---ASSESSING DOCUMENT QUALITY---")
+
+        if not state["documents"]:
+            logger.warning("No relevant documents found in DB. Falling back to web search.")
+            return "web_search"
+        else:
+            logger.info("Sufficient documents found. Proceeding to generation.")
+            return "supervisor"
+
+    async def route_quant(self, state: AgentState) -> Literal["human_intervention", "supervisor"]:
+            if state.get("next_step") == "human_intervention":
+                return "human_intervention"
+            return "supervisor"

@@ -1,15 +1,15 @@
 import os
 from dotenv import load_dotenv
 import logging
+from typing import Optional
 from pydantic import BaseModel
-from fastapi import FastAPI, Depends, Request
+from fastapi import FastAPI, Depends, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from contextlib import asynccontextmanager
 from sqlalchemy.sql import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import init_db, get_session
-from app.models.report import FinancialReport
 from app.services.retriever import RetrievalService
 from app.services.rag import RAGService
 from app.agents.graph import TitanGraph
@@ -38,36 +38,17 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan
 )
-
-@app.get("/health", tags=["System"])
-async def health_check(session: AsyncSession = Depends(get_session)):
-    """
-    Endpoint to verify that the system works
-    """
-    try:
-        result = await session.execute(text("SELECT 1"))
-        return {
-            "status": "active",
-            "system": "TITAN",
-            "database": "connected",
-            "environment": "development",
-            "db_check": result.scalar()
-        }
-    
-    except Exception as e:
-        logger.error(f"Health check failed: {e}")
-        return {
-            "status": "degraded",
-            "database": "unreachable",
-            "detail": str(e)
-        }
-
+templates = Jinja2Templates(directory="app/templates")
 class ChatRequest(BaseModel):
     question: str
 
 class AgentRequest(BaseModel):
     question: str
     thread_id: str = "default_thread"
+
+class ResumeRequest(BaseModel):
+    thread_id: str
+    new_instructions: Optional[str] = None
 
 @app.post("/chat/simple", tags=["Inference"])
 async def simple_chat(request: ChatRequest, session: AsyncSession = Depends(get_session)):
@@ -93,14 +74,76 @@ async def agent_chat(request: AgentRequest, session: AsyncSession = Depends(get_
         "recursion_limit": 50
         }
 
-    final_state = await titan_system.run({"question": request.question}, config=config)
+    agent = await titan_system.get()
+    final_state = await agent.ainvoke({"question": request.question}, config)
+
+    if final_state.get("next_step") == "human_intervention":
+        return {
+            "status": "PAUSED",
+            "message": "Agent paused for human intervention.",
+            "error": final_state.get("error_message")
+        }
 
     return {
-        "answer": final_state["generation"],
+        "status": "COMPLETED",
+        "answer": final_state.get("generation"),
         "sources": final_state.get("sources", [])
     }
 
-templates = Jinja2Templates(directory="app/templates")
+@app.post("/agent/resume", tags=["Agent Control"])
+async def resume_agent(request: ResumeRequest, session: AsyncSession = Depends(get_session)):
+    """
+    Resumes a paused agent. Allows injecting manual corrections.
+    """
+    titan = TitanGraph(session)
+    agent = await titan.get()
+    config = {"configurable": {"thread_id": request.thread_id}}
+
+    current_state = await agent.aget_state(config)
+    if not current_state.next:
+        return {"message": "Thread is not paused or does not exist."}
+
+    resume_input =None
+    if request.new_instructions:
+        resume_input = {
+            "documents": [f"Manual Correction/Calculation: {request.new_instructions}"],
+            "error_message": None,
+            "next_step": "reporter_agent"
+        }
+
+    await agent.aupdate_state(config, resume_input)
+    resume_input = None
+
+    final_state = await agent.ainvoke(resume_input, config)
+
+    return {
+        "status": "Resumed",
+        "answer": final_state.get("generation", "Processing completed.")
+    }
+
+
+@app.get("/health", tags=["System"])
+async def health_check(session: AsyncSession = Depends(get_session)):
+    """
+    Endpoint to verify that the system works
+    """
+    try:
+        result = await session.execute(text("SELECT 1"))
+        return {
+            "status": "active",
+            "system": "TITAN",
+            "database": "connected",
+            "environment": "development",
+            "db_check": result.scalar()
+        }
+    
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return {
+            "status": "degraded",
+            "database": "unreachable",
+            "detail": str(e)
+        }
 
 @app.get("/test-report", response_class=HTMLResponse, tags=["UI Debug"])
 async def test_report_ui(request: Request):
@@ -137,6 +180,31 @@ async def test_report_ui(request: Request):
         "financial_report.html", 
         {"request": request, "data": mock_data}
     )
+
+@app.get("/agent/state/{thread_id}", tags=["Agent Control"])
+async def get_agent_state(thread_id: str, session: AsyncSession = Depends(get_session)):
+    """
+    Get the current state of a conversation thread.
+    Checks if the agent is paused or has errors.
+    """
+    titan = TitanGraph(session)
+    agent = await titan.get()
+    config = {"configurable": {"thread_id": thread_id}}
+
+    current_state = await agent.aget_state(config)
+
+    if not current_state.values:
+        return {"status": "Empty/New Thread"}
+
+    state_data = current_state.values
+
+    return {
+        "next_step": state_data.get("next_step"),
+        "error_message": state_data.get("error_message"),
+        "hystory_steps": state_data.get("loop_step"),
+        "last_node": current_state.next
+    }
+
 
 if __name__ == "__main__":
     import uvicorn

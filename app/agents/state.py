@@ -11,3 +11,4 @@ class AgentState(TypedDict):
     sources: List[str]
     next_step: Optional[str]
     loop_step: Annotated[int, operator.add]
+    error_message: Optional[str]
