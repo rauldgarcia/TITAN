@@ -8,7 +8,7 @@
 [![Postgres](https://img.shields.io/badge/DB-PostgreSQL_16-336791?style=flat&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![LangSmith](https://img.shields.io/badge/Observability-LangSmith-blue?style=flat&logo=langchain)](https://smith.langchain.com/)
 [![Tailwind](https://img.shields.io/badge/Reporting-TailwindCSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![CI Status](https://github.com/rauldgarcia/titan-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/rauldgarcia/titan-platform/actions)
+[![CI Status](https://github.com/rauldgarcia/titan-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/rauldgarcia/TITAN/actions)
 
 ---
 
