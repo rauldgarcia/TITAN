@@ -1,46 +1,13 @@
 import sys
 import os
-import re
 import logging
-from bs4 import BeautifulSoup
 from concurrent.futures import ProcessPoolExecutor
+
+sys.path.append(os.getcwd())
+from app.services.parser import SECParser
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s", handlers=[logging.StreamHandler(sys.stdout)])
 logger = logging.getLogger("TITAN_CLEANER")
-
-class DataCleaner:
-    @staticmethod
-    def clean_html(content: str) -> str:
-        """
-        Sophisticated HTML cleaning strategy for financial documents.
-        """
-
-        soup = BeautifulSoup(content, 'lxml')
-
-        # 1. Remove noise tags (Scripts, Styles, Metadata)
-        for tag in soup(["script", "style", "meta", "noscript", "head", "link"]):
-            tag.extract()
-
-        # 2. Handle Tables: Try to add a newline before tables to separate them from text
-        for table in soup.find_all("table"):
-            table.insert_before("\n")
-            table.insert_after("\n")
-
-        # 3. Extract Text with 'separator' to preserve paragraph structure
-        # Using a distinct separator helps us re-construct lines later
-        text = soup.get_text(separator='\n')
-
-        # 4. Text Normalization
-        # Remove massive whitespace blocks but keep paragraph breaks
-        lines = []
-        for line in text.splitlines():
-            clean_line = line.strip()
-            # Filter out lines that are just symbols or too short (often page numbers or artifacts)
-            if clean_line and len(clean_line) > 1:
-                lines.append(clean_line)
-
-        return "\n".join(lines)
-    
 
 def process_file(file_info):
     """
@@ -55,7 +22,7 @@ def process_file(file_info):
         with open(input_path, 'r', encoding='utf-8', errors='ignore') as f:
             raw_content = f.read()
 
-        cleaned_text = DataCleaner.clean_html(raw_content)
+        cleaned_text = SECParser.clean_html(raw_content)
 
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(cleaned_text)

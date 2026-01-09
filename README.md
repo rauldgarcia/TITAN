@@ -141,6 +141,14 @@ Before querying, you must populate the Vector Database with SEC Filings.
 
 Once the system is running, you can test its distinct capabilities via the Swagger UI (\`http://localhost:8000/docs\`) or cURL.
 
+### 🧪 Running Tests
+
+TITAN uses `pytest` for unit and integration testing.
+
+```bash
+poetry run pytest -v
+```
+
 ### Scenario A: Deep Strategic Analysis (Supervisor + Research)
 
 _Demonstrates RAG, Document Grading, and HTML Reporting._
