@@ -1,0 +1,64 @@
+name: TITAN CI Pipeline
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+env:
+  PYTHON_VERSION: "3.12"
+  POETRY_VERSION: "1.8.2"
+  POSTGRES_SERVER: localhost
+  POSTGRES_USER: titan_test
+  POSTGRES_PASSWORD: titan_test_password
+  POSTGRES_DB: titan_test_db
+  POSTGRES_PORT: 5432
+  TAVILY_API_KEY: "mock-key-for-ci"
+
+jobs:
+  quality-check:
+    name: Code Quality & Tests
+    runs-on: ubuntu-latest
+
+    # 🐳 Service Container Corregido
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: titan_test
+          POSTGRES_PASSWORD: titan_test_password
+          POSTGRES_DB: titan_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: 🛠️ Install Poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: ${{ env.POETRY_VERSION }}
+
+      - name: 📦 Install Dependencies
+        run: poetry install
+
+      - name: 🔍 Linting (Ruff)
+        run: |
+          poetry run pip install ruff
+          poetry run ruff check .
+          poetry run ruff format --check .
+
+      - name: 🧪 Run Tests (Pytest)
+        run: poetry run pytest -v
