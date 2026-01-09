@@ -9,7 +9,10 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 engine = create_async_engine(settings.DATABASE_URL, echo=False, future=True)
-async_session_factory = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+async_session_factory = sessionmaker(
+    engine, class_=AsyncSession, expire_on_commit=False
+)
+
 
 async def create_database_if_not_exists():
     """
@@ -17,15 +20,23 @@ async def create_database_if_not_exists():
     If not, it creates the database.
     """
     logger.info("Checking database existence...")
-    maintenance_engine = create_async_engine(settings.MAINTENANCE_DATABASE_URL, isolation_level="AUTOCOMMIT")
-    
+    maintenance_engine = create_async_engine(
+        settings.MAINTENANCE_DATABASE_URL, isolation_level="AUTOCOMMIT"
+    )
+
     try:
         async with maintenance_engine.connect() as conn:
-            result = await conn.execute(text(f"SELECT 1 FROM pg_database WHERE datname='{settings.POSTGRES_DB}'"))
+            result = await conn.execute(
+                text(
+                    f"SELECT 1 FROM pg_database WHERE datname='{settings.POSTGRES_DB}'"
+                )
+            )
             exists = result.scalar()
 
             if not exists:
-                logger.warning(f"Database '{settings.POSTGRES_DB}' does not exist. Creating it now...")
+                logger.warning(
+                    f"Database '{settings.POSTGRES_DB}' does not exist. Creating it now..."
+                )
                 await conn.execute(text(f"CREATE DATABASE {settings.POSTGRES_DB}"))
                 logger.info(f"Database '{settings.POSTGRES_DB}' already exists.")
 
@@ -34,6 +45,7 @@ async def create_database_if_not_exists():
         raise e
     finally:
         await maintenance_engine.dispose()
+
 
 async def init_db():
     """
@@ -60,13 +72,18 @@ async def init_db():
             return
 
         except Exception as e:
-            logger.warning(f"Database not ready yet (Attemp {attempt + 1}/{retries}). Detail: {e}")
+            logger.warning(
+                f"Database not ready yet (Attemp {attempt + 1}/{retries}). Detail: {e}"
+            )
             if attempt < retries - 1:
                 logger.info(f"Waiting {wait_seconds} seconds before retrying...")
                 await asyncio.sleep(wait_seconds)
             else:
-                logger.critical("Could not connect to database after multiple attempts.")
+                logger.critical(
+                    "Could not connect to database after multiple attempts."
+                )
                 raise e
+
 
 async def get_session() -> AsyncSession:
     async with async_session_factory() as session:

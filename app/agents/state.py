@@ -1,10 +1,12 @@
 from typing import TypedDict, List, Optional, Annotated
 import operator
 
+
 class AgentState(TypedDict):
     """
     Represents the state of our financial agent graph
     """
+
     question: str
     documents: List[str]
     generation: str

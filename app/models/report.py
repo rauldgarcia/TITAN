@@ -4,6 +4,7 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy import Column
 from datetime import datetime
 
+
 class FinancialReport(SQLModel, table=True):
     __tablename__ = "financial_reports"
 

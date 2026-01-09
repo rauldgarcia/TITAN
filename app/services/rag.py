@@ -3,9 +3,9 @@ from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from app.services.retriever import RetrievalService
-from app.models.report import FinancialReport
 
 logger = logging.getLogger(__name__)
+
 
 class RAGService:
     def __init__(self, retrieval_service: RetrievalService):
@@ -21,13 +21,18 @@ class RAGService:
         if not chunks:
             return {
                 "answer": "I couldn't find any relevant information in the financial reports to answer your question.",
-                "sources": []
+                "sources": [],
             }
-        
-        context_text = "\n\n".join([f"[Source: {c.company_ticker} {c.year} 10-K]: {c.content}" for c in chunks])
 
-        prompt_template = ChatPromptTemplate.from_messages([
-            ("system", """You are TITAN, a Senior Financial Auditor AI.
+        context_text = "\n\n".join(
+            [f"[Source: {c.company_ticker} {c.year} 10-K]: {c.content}" for c in chunks]
+        )
+
+        prompt_template = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    """You are TITAN, a Senior Financial Auditor AI.
             Answer the user's question strictly based on the provided context below.
 
             Guidelines:
@@ -37,9 +42,11 @@ class RAGService:
             
             Context:
             {context}
-            """),
-            ("user", "{question}")
-        ])
+            """,
+                ),
+                ("user", "{question}"),
+            ]
+        )
 
         chain = prompt_template | self.llm | StrOutputParser()
 
@@ -48,5 +55,5 @@ class RAGService:
 
         return {
             "answer": response,
-            "sources": [f"{c.company_ticker} ({c.section})" for c in chunks]
+            "sources": [f"{c.company_ticker} ({c.section})" for c in chunks],
         }

@@ -1,5 +1,6 @@
 from app.services.parser import SECParser
 
+
 def test_clean_text_normalization():
     """
     Test to ensure that extra spaces and line breaks are normalized.
@@ -7,6 +8,7 @@ def test_clean_text_normalization():
     dirty_text = "This   is  a    messy \n\n text."
     expected = "This is a messy text."
     assert SECParser.clean_text(dirty_text) == expected
+
 
 def test_html_cleaning_logic():
     """

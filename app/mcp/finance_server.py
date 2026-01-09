@@ -3,6 +3,7 @@ from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("YahooFinance")
 
+
 @mcp.tool()
 def get_stock_price(ticker: str) -> str:
     """
@@ -15,7 +16,8 @@ def get_stock_price(ticker: str) -> str:
         return f"The current price of {ticker.upper()} is {price:.2f} {currency}."
     except Exception as e:
         return f"Error fetching price for {ticker}: {str(e)}"
-    
+
+
 @mcp.tool()
 def get_company_info(ticker: str) -> str:
     """
@@ -33,6 +35,7 @@ def get_company_info(ticker: str) -> str:
         )
     except Exception as e:
         return f"Error fetching info for {ticker}: {str(e)}"
-    
+
+
 if __name__ == "__main__":
     mcp.run()

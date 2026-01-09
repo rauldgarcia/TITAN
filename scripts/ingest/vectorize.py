@@ -10,26 +10,29 @@ from app.db.session import async_session_factory
 from app.models.report import FinancialReport
 from app.services.embedder import embedder
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s", handlers=[logging.StreamHandler(sys.stdout)])
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
 logger = logging.getLogger("TITAN_VECTORIZER")
+
 
 async def process_file(file_path: str, session):
     filename = os.path.basename(file_path)
     logger.info(f"Processing file: {filename}")
 
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             text = f.read()
 
-        parts = filename.split('_')
+        parts = filename.split("_")
         ticker = parts[0] if len(parts) > 0 else "UNKOWN"
         report_type = parts[1] if len(parts) > 1 else "10-K"
         year = 2024
 
         splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=150,
-            separators=["\n\n", "\n", ".", " ", ""] 
+            chunk_size=1000, chunk_overlap=150, separators=["\n\n", "\n", ".", " ", ""]
         )
         chunks = splitter.split_text(text)
 
@@ -44,7 +47,7 @@ async def process_file(file_path: str, session):
                 report_type=report_type,
                 section=f"chunk_{i}",
                 content=chunk,
-                embedding=vector
+                embedding=vector,
             )
             new_records.append(record)
 
@@ -56,19 +59,20 @@ async def process_file(file_path: str, session):
         logger.error(f"Error processing {filename}: {e}")
         await session.rollback()
 
+
 async def main():
     processed_dir = os.path.join(os.getcwd(), "data", "processed")
 
     if not os.path.exists(processed_dir):
         logger.error(f"Directory not found: {processed_dir}. Run clean_data.py first.")
         return
-    
+
     files = [f for f in os.listdir(processed_dir) if f.endswith(".txt")]
 
     if not files:
         logger.warning("No files found to vectorize.")
         return
-    
+
     logger.info(f"Starting Vectorization Job for {len(files)} files...")
 
     async with async_session_factory() as session:
@@ -77,6 +81,7 @@ async def main():
             await process_file(full_path, session)
 
     logger.info("Vectorization Job Completed.")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

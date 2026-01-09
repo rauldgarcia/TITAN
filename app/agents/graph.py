@@ -7,11 +7,12 @@ from app.core.db_pool import get_pool
 
 logger = logging.getLogger(__name__)
 
+
 class TitanGraph:
     def __init__(self, session):
         self.session = session
         self.nodes = AgentNodes(session)
-    
+
     async def get(self):
         """
         Executes the workflow using the global connection pool for persistence.
@@ -41,8 +42,7 @@ class TitanGraph:
         checkpointer = AsyncPostgresSaver(pool)
         await checkpointer.setup()
         app = workflow.compile(
-            checkpointer=checkpointer,
-            interrupt_before=["human_intervention"]
-            )
+            checkpointer=checkpointer, interrupt_before=["human_intervention"]
+        )
 
         return app

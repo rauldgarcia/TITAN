@@ -12,22 +12,25 @@ from app.core.config import settings
 from app.schemas.report_schema import FinancialSummary
 from app.core.mcp_client import load_mcp_tools
 from app.core.prompts import (
-    GRADER_PROMPT, 
-    GENERATOR_PROMPT, 
-    REPORT_PROMPT, 
+    GRADER_PROMPT,
+    GENERATOR_PROMPT,
+    REPORT_PROMPT,
     QUANT_PROMPT,
-    SUPERVISOR_PROMPT
+    SUPERVISOR_PROMPT,
 )
 
 logger = logging.getLogger(__name__)
 templates_env = Environment(loader=FileSystemLoader("app/templates"))
+
 
 class AgentNodes:
     def __init__(self, session):
         self.retriever_service = RetrievalService(session)
         self.router_llm = ChatOllama(model="llama3.2", temperature=0, format="json")
         self.gen_llm = ChatOllama(model="llama3.2", temperature=0)
-        self.web_search_tool = TavilySearchResults(max_results=3, tavily_api_key=settings.TAVILY_API_KEY)
+        self.web_search_tool = TavilySearchResults(
+            max_results=3, tavily_api_key=settings.TAVILY_API_KEY
+        )
         self.repl = PythonREPL()
         self.market_tools = []
 
@@ -38,13 +41,15 @@ class AgentNodes:
         logger.info("---RETRIEVE---")
         question = state["question"]
 
-        documents = await self.retriever_service.search_relevant_chunks(question, limit=4)
+        documents = await self.retriever_service.search_relevant_chunks(
+            question, limit=4
+        )
 
         doc_contents = [doc.content for doc in documents]
         doc_sources = [f"{doc.company_ticker} ({doc.section})" for doc in documents]
 
         return {"documents": doc_contents, "sources": doc_sources, "question": question}
-    
+
     async def grade_documents(self, state: AgentState) -> AgentState:
         """
         Node: Evaluates retrieved documents for relevance (Preference Alignment cia Engineering).
@@ -62,22 +67,28 @@ class AgentNodes:
 
         for i, doc in enumerate(documents):
             try:
-                grade = await grader_chain.ainvoke({"question": question, "document": doc})
+                grade = await grader_chain.ainvoke(
+                    {"question": question, "document": doc}
+                )
                 score = grade.get("score", "no")
 
                 if score == "yes":
-                    logger.info(f"---GRADE: DOCUMENT RELEVANT---")
+                    logger.info("---GRADE: DOCUMENT RELEVANT---")
                     filtered_docs.append(doc)
                     filtered_sources.append(sources[i])
                 else:
-                    logger.info(f"---GRADE: DOCUMENT NOT RELEVANT (FILTERED)---")
+                    logger.info("---GRADE: DOCUMENT NOT RELEVANT (FILTERED)---")
 
             except Exception as e:
                 logger.warning(f"Grader error: {e}")
                 continue
 
-        return {"documents": filtered_docs, "sources": filtered_sources, "question": question}
-    
+        return {
+            "documents": filtered_docs,
+            "sources": filtered_sources,
+            "question": question,
+        }
+
     async def generate(self, state: AgentState) -> AgentState:
         """
         Node: Generates the final answer using filtered documents.
@@ -88,10 +99,10 @@ class AgentNodes:
 
         if not documents:
             return {
-                "generation": "I could not find relevant financial data to answer your question after filtering", 
-                "question": question
-                }
-        
+                "generation": "I could not find relevant financial data to answer your question after filtering",
+                "question": question,
+            }
+
         context = "\n\n".join(documents)
 
         generator_llm = ChatOllama(model="llama3.2", temperature=0)
@@ -100,7 +111,7 @@ class AgentNodes:
         reponse = await chain.ainvoke({"context": context, "question": question})
 
         return {"generation": reponse.content, "question": question}
-    
+
     async def web_search(self, state: AgentState) -> AgentState:
         """
         Node: Performs a web search when initial retrieval is insufficent.
@@ -115,7 +126,7 @@ class AgentNodes:
         web_docs = [res["content"] for res in search_results]
 
         return {"documents": web_docs, "question": question}
-    
+
     async def generate_report(self, state: AgentState) -> AgentState:
         """
         Node: Generates a structured HTML report using the filtered documents.
@@ -127,7 +138,9 @@ class AgentNodes:
         context = "\n\n".join(documents) if documents else "No internal data found."
         parser = JsonOutputParser(pydantic_object=FinancialSummary)
 
-        prompt = REPORT_PROMPT.partial(format_instructions=parser.get_format_instructions())
+        prompt = REPORT_PROMPT.partial(
+            format_instructions=parser.get_format_instructions()
+        )
 
         chain = prompt | self.router_llm | parser
 
@@ -140,10 +153,13 @@ class AgentNodes:
             html_output = template.render(data=json_data)
 
             return {"generation": html_output, "question": question}
-        
+
         except Exception as e:
             logger.error(f"Reporting failed: {e}")
-            return {"generation": f"Error generating report: {str(e)}", "question": question}
+            return {
+                "generation": f"Error generating report: {str(e)}",
+                "question": question,
+            }
 
     async def run_python_analysis(self, state: AgentState) -> AgentState:
         """
@@ -161,8 +177,11 @@ class AgentNodes:
             logger.info(f"Executing Code: {code[:50]}...")
             result = self.repl.run(code)
             logger.info(f"Calculating Result: {result}")
-            return {"documents": [f"Python Calculation Result: {result}"], "question": question}
-        
+            return {
+                "documents": [f"Python Calculation Result: {result}"],
+                "question": question,
+            }
+
         except Exception as e:
             return {"documents": [f"Error calculating: {e}"], "question": question}
 
@@ -176,7 +195,9 @@ class AgentNodes:
         chain = SUPERVISOR_PROMPT | self.router_llm | JsonOutputParser()
 
         if current_step > 0 and docs:
-            logger.info("Supervisor Logic: Data present and loop active -> Forcing Reporter.")
+            logger.info(
+                "Supervisor Logic: Data present and loop active -> Forcing Reporter."
+            )
             return {"next_step": "reporter_agent", "loop_step": 1}
 
         try:
@@ -210,14 +231,11 @@ class AgentNodes:
             current_docs = state.get("documents", [])
             current_docs.append(output_msg)
             return {"documents": current_docs, "error_message": None}
-        
+
         except Exception as e:
             error_msg = f"Quant execution failed: {str(e)}"
             logger.error(f"{error_msg}. ESCALATING TO HUMAN.")
-            return {
-                "error_message": error_msg,
-                "next_step": "human_intervention"
-            }
+            return {"error_message": error_msg, "next_step": "human_intervention"}
 
     async def initialize_tools(self):
         if not self.market_tools:
@@ -227,10 +245,10 @@ class AgentNodes:
         logger.info("---MARKET AGENT (MCP)---")
         question = state["question"]
         await self.initialize_tools()
-        
+
         if not self.market_tools:
             return {"documents": ["Error: Market tools unavailable."]}
-        
+
         words = question.split()
         ticker = next((w for w in words if w.isupper() and len(w) <= 5), "AAPL")
         results = []
@@ -254,13 +272,23 @@ class AgentNodes:
         logger.info("Human has updated the state. Resuming workflow...")
         return {"error_message": None, "next_step": "reporter_agent"}
 
-    async def route_supervisor(self, state:AgentState) -> Literal["retrieve", "quant_agent", "market_agent", "human_intervention", "reporter_agent"]:
+    async def route_supervisor(
+        self, state: AgentState
+    ) -> Literal[
+        "retrieve",
+        "quant_agent",
+        "market_agent",
+        "human_intervention",
+        "reporter_agent",
+    ]:
         next_node = state.get("next_step")
         current_step = state.get("loop_step", 0)
         max_loops = 15
 
         if current_step >= max_loops:
-            logger.warning("Max loops ({max_loops}) reached. Forcing report generation.")
+            logger.warning(
+                "Max loops ({max_loops}) reached. Forcing report generation."
+            )
             return "reporter_agent"
 
         logger.info(f"Router directing to: {next_node}")
@@ -278,7 +306,9 @@ class AgentNodes:
         else:
             return "reporter_agent"
 
-    async def route_search(self, state: AgentState) -> Literal["web_search", "supervisor"]:
+    async def route_search(
+        self, state: AgentState
+    ) -> Literal["web_search", "supervisor"]:
         """
         Determines wheter to generate an answer or perform a web search.
         If any relevant documents were found, proceed to generation.
@@ -287,13 +317,17 @@ class AgentNodes:
         logger.info("---ASSESSING DOCUMENT QUALITY---")
 
         if not state["documents"]:
-            logger.warning("No relevant documents found in DB. Falling back to web search.")
+            logger.warning(
+                "No relevant documents found in DB. Falling back to web search."
+            )
             return "web_search"
         else:
             logger.info("Sufficient documents found. Proceeding to generation.")
             return "supervisor"
 
-    async def route_quant(self, state: AgentState) -> Literal["human_intervention", "supervisor"]:
-            if state.get("next_step") == "human_intervention":
-                return "human_intervention"
-            return "supervisor"
+    async def route_quant(
+        self, state: AgentState
+    ) -> Literal["human_intervention", "supervisor"]:
+        if state.get("next_step") == "human_intervention":
+            return "human_intervention"
+        return "supervisor"

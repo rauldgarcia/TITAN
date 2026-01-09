@@ -6,10 +6,12 @@ If the document contains keyword(s) or semantic meaning related to the user ques
 Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question.
 Provide the binary score as a JSON with a single key 'score' and no preamble or explanation."""
 
-GRADER_PROMPT = ChatPromptTemplate.from_messages([
-    ("system", GRADER_SYSTEM_PROMPT),
-    ("human", "Retrieved document: \n\n {document} \n\n User question: {question}")
-])
+GRADER_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        ("system", GRADER_SYSTEM_PROMPT),
+        ("human", "Retrieved document: \n\n {document} \n\n User question: {question}"),
+    ]
+)
 
 # --- GENERATOR AGENT ---
 GENERATOR_SYSTEM_PROMPT = """You are TITAN, a Senior Financial Auditor. 
@@ -19,10 +21,9 @@ Keep the answer professional, concise, and detailed.
 
 Context: {context}"""
 
-GENERATOR_PROMPT = ChatPromptTemplate.from_messages([
-    ("system", GENERATOR_SYSTEM_PROMPT),
-    ("human", "{question}")
-])
+GENERATOR_PROMPT = ChatPromptTemplate.from_messages(
+    [("system", GENERATOR_SYSTEM_PROMPT), ("human", "{question}")]
+)
 
 # --- REPORTING AGENT ---
 REPORT_SYSTEM_TEMPLATE = """You are TITAN, a Chief Financial Officer (CFO) AI.
@@ -40,9 +41,7 @@ INSTRUCTIONS:
 """
 
 REPORT_PROMPT = PromptTemplate(
-    template=REPORT_SYSTEM_TEMPLATE,
-    input_variables=["context"],
-    partial_variables={}
+    template=REPORT_SYSTEM_TEMPLATE, input_variables=["context"], partial_variables={}
 )
 
 # --- QUANT AGENT (Generador de Código Python) ---
@@ -62,10 +61,7 @@ INSTRUCTIONS:
 - NO comments.
 """
 
-QUANT_PROMPT = PromptTemplate(
-    template=QUANT_TEMPLATE,
-    input_variables=["question"]
-)
+QUANT_PROMPT = PromptTemplate(template=QUANT_TEMPLATE, input_variables=["question"])
 
 # --- SUPERVISOR AGENT ---
 SUPERVISOR_SYSTEM_PROMPT = """You are the Supervisor of a financial analysis team.
@@ -85,7 +81,9 @@ INSTRUCTIONS:
 Output a JSON with a single key 'next_step'.
 """
 
-SUPERVISOR_PROMPT = ChatPromptTemplate.from_messages([
-    ("system", SUPERVISOR_SYSTEM_PROMPT),
-    ("human", "User Question: {question} \n\n Current Documents Foudn: {len_docs}")
-])
+SUPERVISOR_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        ("system", SUPERVISOR_SYSTEM_PROMPT),
+        ("human", "User Question: {question} \n\n Current Documents Foudn: {len_docs}"),
+    ]
+)
