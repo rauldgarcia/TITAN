@@ -1,38 +1,42 @@
 [tool.poetry]
 name = "titan"
 version = "0.1.0"
-description = ""
-authors = [
-    {name = "raul",email = "rauld.garcia95@gmail.com"}
-]
+description = "Financial Intelligence Multi-Agent System"
+authors = ["Raul <rauld.garcia95@gmail.com>"]
 readme = "README.md"
-requires-python = ">=3.12,<4.0"
-dependencies = [
-    "fastapi (>=0.127.0,<0.128.0)",
-    "uvicorn (>=0.40.0,<0.41.0)",
-    "sqlmodel (>=0.0.27,<0.0.28)",
-    "asyncpg (>=0.31.0,<0.32.0)",
-    "pydantic-settings (>=2.12.0,<3.0.0)",
-    "pgvector (>=0.4.2,<0.5.0)",
-    "sec-edgar-downloader (>=5.0.3,<6.0.0)",
-    "beautifulsoup4 (>=4.14.3,<5.0.0)",
-    "lxml (>=6.0.2,<7.0.0)",
-    "langchain-text-splitters (>=1.1.0,<2.0.0)",
-    "sentence-transformers (>=5.2.0,<6.0.0)",
-    "langchain-ollama (>=1.0.1,<2.0.0)",
-    "langgraph (>=1.0.5,<2.0.0)",
-    "tavily-python (>=0.7.17,<0.8.0)",
-    "langchain-community (>=0.4.1,<0.5.0)",
-    "langchain-experimental (>=0.4.1,<0.5.0)",
-    "langgraph-checkpoint-postgres (>=3.0.2,<4.0.0)",
-    "psycopg (>=3.3.2,<4.0.0)",
-    "psycopg-pool (>=3.3.0,<4.0.0)",
-    "mcp (>=1.25.0,<2.0.0)",
-    "langchain-mcp-adapters (>=0.2.1,<0.3.0)",
-    "yfinance (>=1.0,<2.0)"
-]
 
+[tool.poetry.dependencies]
+python = ">=3.12,<4.0"
+fastapi = ">=0.127.0,<0.128.0"
+uvicorn = ">=0.40.0,<0.41.0"
+sqlmodel = ">=0.0.27,<0.0.28"
+asyncpg = ">=0.31.0,<0.32.0"
+pydantic-settings = ">=2.12.0,<3.0.0"
+pgvector = ">=0.4.2,<0.5.0"
+sec-edgar-downloader = ">=5.0.3,<6.0.0"
+beautifulsoup4 = ">=4.14.3,<5.0.0"
+lxml = ">=6.0.2,<7.0.0"
+langchain-text-splitters = ">=1.1.0,<2.0.0"
+sentence-transformers = ">=5.2.0,<6.0.0"
+langchain-ollama = ">=1.0.1,<2.0.0"
+langgraph = ">=1.0.5,<2.0.0"
+tavily-python = ">=0.7.17,<0.8.0"
+langchain-community = ">=0.4.1,<0.5.0"
+langchain-experimental = ">=0.4.1,<0.5.0"
+langgraph-checkpoint-postgres = ">=3.0.2,<4.0.0"
+psycopg = ">=3.3.2,<4.0.0"
+psycopg-pool = ">=3.3.0,<4.0.0"
+mcp = ">=1.2.0,<2.0.0"
+langchain-mcp-adapters = ">=0.0.1,<0.1.0"
+yfinance = ">=0.2.40,<1.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.0.0,<9.0.0"
+pytest-asyncio = ">=0.23.0,<1.0.0"
+httpx = ">=0.27.0,<1.0.0"
+pytest-mock = ">=3.14.0,<4.0.0"
+ruff = ">=0.4.0,<1.0.0"
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
