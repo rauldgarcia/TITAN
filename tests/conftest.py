@@ -17,6 +17,7 @@ async def client():
 def mock_session():
     return AsyncMock()
 
+
 @pytest.fixture
 def nodes_with_mocks(mock_session):
     """
@@ -33,5 +34,3 @@ def nodes_with_mocks(mock_session):
 
         nodes.repl = MagicMock()
         return nodes
-    
-    

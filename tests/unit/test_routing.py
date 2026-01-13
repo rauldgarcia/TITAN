@@ -1,6 +1,7 @@
 import pytest
 from app.agents.state import AgentState
 
+
 @pytest.mark.asyncio
 async def test_route_supervisor_logic(nodes_with_mocks):
     """
@@ -14,19 +15,17 @@ async def test_route_supervisor_logic(nodes_with_mocks):
     decision = await nodes_with_mocks.route_supervisor(state_unknown)
     assert decision == "quant_agent"
 
+
 @pytest.mark.asyncio
 async def test_circuit_breaker_logic(nodes_with_mocks):
     """
     CRITICAL: Test that the 'Circuit Breaker' stops infinite loops.
     If loop_step >= 15, it must force 'reporter_agent' to ignore the supervisor.
     """
-    state_loop = AgentState(
-        next_step="research_agent",
-        loop_step=15,
-        documents=[]
-    )
+    state_loop = AgentState(next_step="research_agent", loop_step=15, documents=[])
     decision = await nodes_with_mocks.route_supervisor(state_loop)
     assert decision == "reporter_agent"
+
 
 @pytest.mark.asyncio
 async def test_route_search_logic(nodes_with_mocks):
@@ -40,6 +39,7 @@ async def test_route_search_logic(nodes_with_mocks):
     state_full = AgentState(documents=["doc1", "doc2"])
     decision = await nodes_with_mocks.route_search(state_full)
     assert decision == "supervisor"
+
 
 @pytest.mark.asyncio
 async def test_route_quant_hitl(nodes_with_mocks):

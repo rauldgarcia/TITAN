@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, patch
 from app.agents.state import AgentState
 
+
 @pytest.mark.asyncio
 async def test_quant_agent_success(nodes_with_mocks):
     """
