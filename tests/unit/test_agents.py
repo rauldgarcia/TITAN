@@ -1,34 +1,6 @@
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from app.agents.nodes import AgentNodes
+from unittest.mock import AsyncMock, patch
 from app.agents.state import AgentState
-
-
-@pytest.fixture
-def mock_session():
-    """
-    Simulate a database session.
-    """
-    return AsyncMock()
-
-
-@pytest.fixture
-def nodes_with_mocks(mock_session):
-    """
-    Initialize AgentNodes with all external tools mocked.
-    """
-    with (
-        patch("app.agents.nodes.RetrievalService"),
-        patch("app.agents.nodes.ChatOllama"),
-        patch("app.agents.nodes.TavilySearchResults"),
-        patch("app.agents.nodes.PythonREPL"),
-        patch("app.agents.nodes.load_mcp_tools"),
-    ):
-        nodes = AgentNodes(mock_session)
-
-        nodes.repl = MagicMock()
-        return nodes
-
 
 @pytest.mark.asyncio
 async def test_quant_agent_success(nodes_with_mocks):
