@@ -230,7 +230,7 @@ _Demonstrates resilience. If the Quant Agent fails (e.g., division by zero), the
 ### 🚧 Upcoming Phases
 
 - **Phase 6: MLOps & Quality Engineering (Next Sprint)**
-  - \[ \] **Testing:** Unit & Integration Testing suite (Pytest).
+  - \[x\] **Testing:** Unit & Integration Testing suite (Pytest).
   - \[ \] **CI/CD:** GitHub Actions for automated linting and Docker builds.
   - \[ \] **Evaluation:** RAGAS metrics implementation.
 - **Phase 7: Full Stack Experience**
