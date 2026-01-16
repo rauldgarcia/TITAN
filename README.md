@@ -81,6 +81,7 @@ TITAN implements a **Stateful Hierarchical Graph**. The state is persisted in Po
 - **Data Engineering:** Custom ETL pipeline using \`sec-edgar-downloader\` and \`BeautifulSoup4\` for high-fidelity HTML parsing.
 - **Code Execution:** Sandboxed Python REPL for deterministic mathematical operations.
 - **Observability:** Full trace monitoring via **LangSmith**.
+- **Quality Assurance:** **RAGAS** (Metric-based Evaluation).
 - **Reporting:** Jinja2 templating engine generating responsive TailwindCSS reports.
 
 ---
@@ -232,7 +233,7 @@ _Demonstrates resilience. If the Quant Agent fails (e.g., division by zero), the
 - **Phase 6: MLOps & Quality Engineering (Next Sprint)**
   - \[x\] **Testing:** Unit & Integration Testing suite (Pytest).
   - \[ \] **CI/CD:** GitHub Actions for automated linting and Docker builds.
-  - \[ \] **Evaluation:** RAGAS metrics implementation.
+  - \[x\] **Evaluation:** RAGAS metrics implementation.
 - **Phase 7: Full Stack Experience**
   - \[ \] **Frontend Client:** React Application.
   - \[ \] **Cloud Deployment:** Deploy backend to GCP Cloud Run.
