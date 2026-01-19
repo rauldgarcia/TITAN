@@ -10,12 +10,40 @@ from app.agents.nodes import AgentNodes
 from app.core.config import settings
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def client():
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as ac:
         yield ac
+
+
+@pytest_asyncio.fixture(scope="function")
+async def setup_test_db():
+    """
+    Session Fixture: Runs ONCE at the start of all tests.
+    1. Deletes the previous test database.
+    2. Creates a new database, 'titan_test_db'.
+    """
+    sys_engine = create_async_engine(
+        settings.MAINTENANCE_DATABASE_URL, isolation_level="AUTOCOMMIT"
+    )
+
+    async with sys_engine.connect() as conn:
+        await conn.execute(
+            text("""
+        SELECT pg_terminate_backend(pg_stat_activity.pid)
+        FROM pg_stat_activity
+        WHERE pg_stat_activity.datname = 'titan_test_db'
+        AND pid <> pg_backend_pid();
+        """)
+        )
+
+        await conn.execute(text("DROP DATABASE IF EXISTS titan_test_db"))
+        await conn.execute(text("CREATE DATABASE titan_test_db"))
+
+    await sys_engine.dispose()
+    return settings.TEST_DATABASE_URL
 
 
 @pytest.fixture
@@ -42,16 +70,16 @@ def nodes_with_mocks(mock_session):
 
 
 @pytest_asyncio.fixture(scope="function")
-async def db_session():
+async def db_session(setup_test_db):
     """
-    Create a real database session for integration testing.
-    Ensure that the tables exist before starting.
+    Function fixture: Runs in EVERY test.
+    Connects to 'titan_test_db', creates the tables, hands off the session, and then rolls back.
     """
-    test_engine = create_async_engine(settings.DATABASE_URL, echo=False, future=True)
+    test_db_url = setup_test_db
+    test_engine = create_async_engine(test_db_url, echo=False, future=True)
 
     async with test_engine.begin() as conn:
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-        await conn.run_sync(SQLModel.metadata.drop_all)
         await conn.run_sync(SQLModel.metadata.create_all)
 
     async_session_factory = sessionmaker(
