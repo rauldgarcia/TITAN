@@ -198,16 +198,16 @@ class AgentNodes:
             logger.info(
                 "Supervisor Logic: Data present and loop active -> Forcing Reporter."
             )
-            return {"next_step": "reporter_agent", "loop_step": 1}
+            return {"next_step": "reporter_agent", "loop_step": current_step + 1}
 
         try:
             result = await chain.ainvoke({"question": question, "len_docs": len(docs)})
             next_step = result.get("next_step", "reporter_agent")
             logger.info(f"Supervisor decided: {next_step}")
-            return {"next_step": next_step, "loop_step": 1}
+            return {"next_step": next_step, "loop_step": current_step + 1}
         except Exception as e:
             logger.error(f"Supervisor failed: {e}. Defaulting to reporter.")
-            return {"next_step": "reporter_agent", "loop_step": 1}
+            return {"next_step": "reporter_agent", "loop_step": current_step + 1}
 
     async def quant_agent(self, state: AgentState) -> AgentState:
         logger.info("--- QUANT AGENT: CODING ---")

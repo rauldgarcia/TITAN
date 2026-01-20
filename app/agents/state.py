@@ -1,5 +1,4 @@
-from typing import TypedDict, List, Optional, Annotated
-import operator
+from typing import TypedDict, List, Optional
 
 
 class AgentState(TypedDict):
@@ -12,5 +11,5 @@ class AgentState(TypedDict):
     generation: str
     sources: List[str]
     next_step: Optional[str]
-    loop_step: Annotated[int, operator.add]
+    loop_step: int
     error_message: Optional[str]

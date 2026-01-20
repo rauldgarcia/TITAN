@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from fastapi import FastAPI, Depends, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from sqlalchemy.sql import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,6 +40,15 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 templates = Jinja2Templates(directory="app/templates")
 
 
@@ -80,10 +90,11 @@ async def agent_chat(
     The 'thread_id' in the request determines the conversation history.
     """
     titan_system = TitanGraph(session)
+    initial_state = {"question": request.question, "loop_step": 0}
     config = {"configurable": {"thread_id": request.thread_id}, "recursion_limit": 50}
 
     agent = await titan_system.get()
-    final_state = await agent.ainvoke({"question": request.question}, config)
+    final_state = await agent.ainvoke(initial_state, config)
 
     if final_state.get("next_step") == "human_intervention":
         return {
