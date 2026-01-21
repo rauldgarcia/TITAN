@@ -51,7 +51,7 @@ async def test_supervisor_force_reporter(nodes_with_mocks):
         next_step=None,
         generation="",
         sources=[],
-        error_message=None
+        error_message=None,
     )
     result = await nodes_with_mocks.supervisor_node(state)
 
