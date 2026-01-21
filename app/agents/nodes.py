@@ -11,6 +11,7 @@ from app.services.retriever import RetrievalService
 from app.core.config import settings
 from app.schemas.report_schema import FinancialSummary
 from app.core.mcp_client import load_mcp_tools
+from app.core.llm import LLMFactory
 from app.core.prompts import (
     GRADER_PROMPT,
     GENERATOR_PROMPT,
@@ -26,8 +27,8 @@ templates_env = Environment(loader=FileSystemLoader("app/templates"))
 class AgentNodes:
     def __init__(self, session):
         self.retriever_service = RetrievalService(session)
-        self.router_llm = ChatOllama(model="llama3.2", temperature=0, format="json")
-        self.gen_llm = ChatOllama(model="llama3.2", temperature=0)
+        self.router_llm = LLMFactory.get_llm(temperature=0, json_mode=True)
+        self.gen_llm = LLMFactory.get_llm(temperature=0, json_mode=False)
         self.web_search_tool = TavilySearchResults(
             max_results=3, tavily_api_key=settings.TAVILY_API_KEY
         )

@@ -1,13 +1,12 @@
 import logging
-import torch
-from sentence_transformers import SentenceTransformer
+from app.core.llm import LLMFactory
 
 logger = logging.getLogger(__name__)
 
 
 class EmbeddingService:
     _instance = None
-    _model = None
+    _embedder_model = None
 
     def __new__(cls):
         if cls._instance is None:
@@ -17,12 +16,9 @@ class EmbeddingService:
 
     @classmethod
     def _initialize_model(cls):
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        logger.info(f"Loading Embedding Model on: {device.upper()}")
-
         try:
-            cls._model = SentenceTransformer("all-mpnet-base-v2", device=device)
-            logger.info("Embedding Model loaded successfully.")
+            cls._embedder_model = LLMFactory.get_embeddings()
+            logger.info("Embedding Model initialized via Factory.")
         except Exception as e:
             logger.critical(f"Failded to load embedding model: {e}")
 
@@ -31,8 +27,8 @@ class EmbeddingService:
             return []
 
         clean_text = text.replace("\n", " ")
-        embedding = self._model.encode(clean_text, show_progress_bar=False)
-        return embedding.tolist()
+
+        return self._embedder_model.embed_query(clean_text)
 
 
 embedder = EmbeddingService()
