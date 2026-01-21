@@ -49,8 +49,11 @@ async def test_supervisor_force_reporter(nodes_with_mocks):
         documents=["Some financial data"],
         loop_step=1,
         next_step=None,
+        generation="",
+        sources=[],
+        error_message=None
     )
     result = await nodes_with_mocks.supervisor_node(state)
 
     assert result["next_step"] == "reporter_agent"
-    assert result["loop_step"] == 1
+    assert result["loop_step"] == 2
