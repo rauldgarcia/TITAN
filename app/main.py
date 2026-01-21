@@ -167,7 +167,8 @@ async def health_check(session: AsyncSession = Depends(get_session)):
 @app.get("/test-report", response_class=HTMLResponse, tags=["UI Debug"])
 async def test_report_ui(request: Request):
     """
-    Endpoint visual para probar el diseño del reporte sin ejecutar el agente.
+    Visual endpoint to test the report design without running the agent.
+    Wrap the Jinja2 fragment in a complete HTML shell for debugging.
     """
     # Datos Mock (Simulando lo que extraería el agente)
     mock_data = {
@@ -195,9 +196,33 @@ async def test_report_ui(request: Request):
         ],
     }
 
-    return templates.TemplateResponse(
-        "financial_report.html", {"request": request, "data": mock_data}
+    report_content = templates.get_template("financial_report.html").render(
+        data=mock_data
     )
+
+    full_html = f"""
+    <!DOCTYPE html>
+    <html lang="en" class="dark">
+    <head>
+        <title>Debug TITAN Report</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+        <style>
+            body {{ background-color: #020617; font-family: 'Plus Jakarta Sans', sans-serif; }}
+        </style>
+    </head>
+    <body class="flex justify-center p-10">
+        <div class="w-full max-w-5xl border border-white/10 rounded-xl shadow-2xl bg-[#020617]">
+            {report_content}
+        </div>
+    </body>
+    </html>
+    """
+
+    return HTMLResponse(content=full_html)
 
 
 @app.get("/agent/state/{thread_id}", tags=["Agent Control"])

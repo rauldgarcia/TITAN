@@ -31,6 +31,7 @@ export default {
     // Shadows (Glow effect)
     'shadow-[0_0_10px_rgba(244,63,94,0.1)]', 
     // Utilities
-    'animate-pulse', 'w-full', 'py-1.5', 'rounded'
+    'animate-pulse', 'w-full', 'py-1.5', 'rounded',
+    'md:flex-row', 'md:items-end', 'md:!text-6xl', 'md:w-40', 'w-32', 'gap-6'
   ]
 }

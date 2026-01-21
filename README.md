@@ -2,6 +2,7 @@
 
 **A Hierarchical Multi-Agent System for Deep Financial Auditing & Strategy Analysis**
 
+[![React](https://img.shields.io/badge/Frontend-React_18-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev/)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-FF4B4B?style=flat&logo=langchain&logoColor=white)](https://python.langchain.com/docs/langgraph)
 [![MCP](https://img.shields.io/badge/Integration-MCP-4B32C3?style=flat&logo=anthropic&logoColor=white)](https://modelcontextprotocol.io/)
@@ -16,19 +17,19 @@
 
 **TITAN** is not just a chatbot; it is an autonomous **Financial Analysis Engine** engineered to mimic the workflow of a human audit team. It moves beyond simple RAG by employing a **Supervisor-Worker Architecture** where a central orchestrator delegates tasks to specialized agents (Researchers, Quants, Market Analysts) to solve complex financial queries.
 
-The system features **Self-Correction** mechanisms, **Real-Time Data Injection** via MCP, and a **Human-in-the-Loop (HITL)** protocol to handle execution failures gracefully, ensuring enterprise-grade reliability.
+The system features a **Cyberpunk-style Dashboard**, **Self-Correction** mechanisms, **Real-Time Data Injection** via MCP, and a **Human-in-the-Loop (HITL)** protocol to handle execution failures gracefully.
 
 ---
 
 ## 🏗️ System Architecture
 
-TITAN implements a **Stateful Hierarchical Graph**. The state is persisted in PostgreSQL, allowing for long-running analysis sessions that survive service restarts.
+TITAN implements a **Stateful Hierarchical Graph**. The state is persisted in PostgreSQL, allowing for long-running analysis sessions that survive service restarts, managed via a React Frontend.
 
-### The "Deep Analyzer" Topology
+### The Topology
 
 ```mermaid
     graph TD
-    User[User Request] --> Supervisor{SUPERVISOR NODE}
+    User[User Request via React UI] --> Supervisor{SUPERVISOR NODE}
 
     %% Delegation Paths
     Supervisor -- "Need Context/Risks" --> Research[Research Agent]
@@ -66,14 +67,15 @@ TITAN implements a **Stateful Hierarchical Graph**. The state is persisted in Po
     Return3 --> Supervisor
 
     %% Output
-    Reporter --> HTML[HTML Dashboard] --> End((End))
+    Reporter --> HTML[HTML Dashboard] --> ReactClient[Render in UI]
 ```
 
 ---
 
 ## 🛠️ Tech Stack & Engineering Standards
 
-- **Core Framework:** Python 3.12+, FastAPI (Async), Pydantic v2.
+- **Core Backend:** Python 3.12+, FastAPI (Async), Pydantic v2.
+- **Frontend Architecture:** React 18 (Vite) with TailwindCSS v3 for a responsive, dark-mode "Glassmorphism" dashboard.
 - **Agent Orchestration:** LangGraph with **AsyncPostgresSaver** for production-grade persistence using Connection Pooling (`psycopg-pool`).
 - **Vector Database:** PostgreSQL 16 with `pgvector` extension.
 - **Embedding Engine:** Local GPU-accelerated inference using `sentence-transformers` (CUDA).
@@ -83,6 +85,7 @@ TITAN implements a **Stateful Hierarchical Graph**. The state is persisted in Po
 - **Observability:** Full trace monitoring via **LangSmith**.
 - **Quality Assurance:** **RAGAS** (Metric-based Evaluation).
 - **Reporting:** Jinja2 templating engine generating responsive TailwindCSS reports.
+- **CI/CD & Quality:** Automated pipelines via **GitHub Actions**, enforcing strict linting/formatting with **Ruff** and type safety.
 
 ---
 
@@ -90,7 +93,7 @@ TITAN implements a **Stateful Hierarchical Graph**. The state is persisted in Po
 
 ### 1\. Prerequisites
 
-- Python 3.12+ (Managed via **Poetry**)
+- Python 3.12+ (Poetry) & Node.js 18+ (NPM)
 - Docker & Docker Compose
 - NVIDIA GPU (Recommended for Vectorization)
 - **Ollama** running locally (`ollama serve`) with \`llama3.2\`.
@@ -126,6 +129,12 @@ Create a \`.env\` file in the root directory:
 
     # 4. Start the API Server
     poetry run uvicorn app.main:app --reload
+
+    # 5. Frontend (Console UI)
+    cd frontend
+    npm install
+    npm run dev
+    # Access the UI at http://localhost:5173
 
 ---
 
@@ -221,22 +230,25 @@ _Demonstrates resilience. If the Quant Agent fails (e.g., division by zero), the
   - \[x\] Self-Correction Logic (CRAG).
   - \[x\] Web Search Fallback (Tavily).
   - \[x\] **Reporting Engine:** Jinja2 + TailwindCSS HTML Generation.
-- **Phase 5: Advanced Orchestration (The "Deep Analyzer")**
+- **Phase 5: Advanced Orchestration**
   - \[x\] **Persistent Memory:** Postgres-backed thread persistence with Connection Pooling.
   - \[x\] **Hierarchical Architecture:** Supervisor-Worker topology.
   - \[x\] **Quantitative Tool:** Python REPL integration for math.
   - \[x\] **MCP Integration:** Custom Yahoo Finance MCP Server.
   - \[x\] **Resilience:** Human-in-the-Loop (HITL) error recovery.
-
-### 🚧 Upcoming Phases
-
 - **Phase 6: MLOps & Quality Engineering (Next Sprint)**
   - \[x\] **Testing:** Unit & Integration Testing suite (Pytest).
-  - \[ \] **CI/CD:** GitHub Actions for automated linting and Docker builds.
+  - \[x\] **CI/CD:** GitHub Actions for automated linting and Docker builds.
   - \[x\] **Evaluation:** RAGAS metrics implementation.
 - **Phase 7: Full Stack Experience**
-  - \[ \] **Frontend Client:** React Application.
-  - \[ \] **Cloud Deployment:** Deploy backend to GCP Cloud Run.
+  - \[x\] **Frontend Client:** React Application with TailwindCSS & Glassmorphism UI.
+  - \[x\] **Dynamic Reporting:** Rendering Jinja2 HTML reports within React.
+
+  ### 🚧 Upcoming Phases
+
+  **Phase 8: Cloud Deployment**
+  - \[ \] **Containerization:** Production Dockerfile optimization.
+  - \[ \] **Google Cloud:** Deploy backend to Cloud Run & DB to Cloud SQL.
 
 ---
 
