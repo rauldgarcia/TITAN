@@ -6,7 +6,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 sys.path.append(os.getcwd())
 
-from app.db.session import async_session_factory
+from app.db.session import async_session_factory, init_db
 from app.models.report import FinancialReport
 from app.services.embedder import embedder
 
@@ -29,7 +29,7 @@ async def process_file(file_path: str, session):
         parts = filename.split("_")
         ticker = parts[0] if len(parts) > 0 else "UNKOWN"
         report_type = parts[1] if len(parts) > 1 else "10-K"
-        year = 2024
+        year = 2025
 
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000, chunk_overlap=150, separators=["\n\n", "\n", ".", " ", ""]
@@ -61,6 +61,10 @@ async def process_file(file_path: str, session):
 
 
 async def main():
+    logger.info("Initializing Database Infrastructure...")
+    await init_db()
+    logger.info("Database ready.")
+
     processed_dir = os.path.join(os.getcwd(), "data", "processed")
 
     if not os.path.exists(processed_dir):

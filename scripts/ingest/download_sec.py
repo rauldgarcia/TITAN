@@ -1,7 +1,8 @@
-import sys
 import os
+import sys
 import logging
-from sec_edgar_downloader import Downloader
+import requests
+import time
 from datetime import datetime
 
 logging.basicConfig(
@@ -10,6 +11,33 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)],
 )
 logger = logging.getLogger("TITAN_ETL")
+
+SEC_HEADERS = {
+    "User-Agent": "TitanIntelligence rauld.garcia95@gmail.com",
+    "Accept-Encoding": "gzip, deflate",
+    "Host": "www.sec.gov",
+}
+
+
+def get_cik_from_ticker(ticker: str) -> str:
+    """
+    Obtains the CIK (SEC Unique ID) given a Ticker.
+    """
+    try:
+        url = "https://www.sec.gov/files/company_tickers.json"
+        response = requests.get(url, headers=SEC_HEADERS)
+        response.raise_for_status()
+        data = response.json()
+
+        for entry in data.values():
+            if entry["ticker"] == ticker.upper():
+                return str(entry["click_str"]).zfill(10)
+
+        raise ValueError(f"Ticker {ticker} not found in SEC database.")
+
+    except Exception as e:
+        logger.info(f"Error fetching CIK for {ticker}: {e}")
+        return None
 
 
 def download_10k_filings(tickers: list[str], amount: int = 1):
@@ -25,34 +53,62 @@ def download_10k_filings(tickers: list[str], amount: int = 1):
     """
 
     base_dir = os.path.abspath(os.path.join(os.getcwd(), "data", "sec_filings"))
-    os.makedirs(base_dir, exist_ok=True)
-
-    logger.info(f"Storage Directory set to: {base_dir}")
-
-    dl = Downloader("TitanPlatform", "admin@titan-demo.com", base_dir)
-
-    success_count = 0
 
     for ticker in tickers:
         try:
-            logger.info(f"Starting download for {ticker} (Limit: {amount})...")
-            num_downloaded = dl.get("10-K", ticker, limit=amount)
+            logger.info(f"Looking for CIK for {ticker}...")
+            cik = get_cik_from_ticker(ticker)
+            if not cik:
+                continue
 
-            if num_downloaded > 0:
-                logger.info(
-                    f"Successfully downloaded {num_downloaded} filings for {ticker}."
-                )
-                success_count += 1
-            else:
-                logger.warning(f"No filings found for {ticker}.")
+            logger.info(f"Retrieving report history for {ticker} (CIK: {cik})...")
+            submissions_url = f"https://data.sec.gov/submissions/CIK{cik}.json"
+            resp = requests.get(submissions_url, headers=SEC_HEADERS)
+            resp.raise_for_status()
+            filings = resp.json()["filings"]["recent"]
 
-        except Exception as e:
-            logger.error(f"Critical error downloading {ticker}: {e}")
+            count = 0
 
-    return success_count
+            for i, form in enumerate(filings["form"]):
+                if form == "10-K":
+                    accession_number = filings["accessionNumber"][i]
+                    primary_document = filings["primaryDocument"][i]
+                    accession_no_dash = accession_number.replace("-", "")
+                    doc_url = f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{accession_no_dash}/{primary_document}"
+
+                    save_path = os.path.join(
+                        base_dir,
+                        "sec_edgar_filings",
+                        ticker,
+                        "10-K",
+                        accession_number,
+                        "full-submission.txt",
+                    )
+                    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+
+                    if not os.path.exists(save_path):
+                        logger.info(f"Descargando 10-K ({accession_number})...")
+                        doc_resp = requests.get(doc_url, headers=SEC_HEADERS)
+                        doc_resp.raise_for_status()
+
+                        with open(save_path, "wb") as f:
+                            f.write(doc_resp.content)
+
+                    else:
+                        logger.info(f"File already exists: {accession_number}")
+
+                    count += 1
+                    time.sleep(0.2)  # Respect SEC rate limit (10 req/s)
+
+                    if count >= amount:
+                        break
+
+        except Exception:
+            logger.errorf("Download failed for {ticker}: {e}")
 
 
 if __name__ == "__main__":
+    os.makedirs("data", exist_ok=True)
     TARGET_COMPANIES = ["AAPL", "TSLA", "MSFT"]
 
     start_time = datetime.now()

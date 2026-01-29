@@ -1,0 +1,54 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: titan_db_prod
+    restart: on-failure:5
+    environment:
+      POSTGRES_USER: titan_user
+      POSTGRES_PASSWORD: titan_password
+      POSTGRES_DB: titan_db
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+      - ./scripts/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U titan_user -d titan_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: titan_backend_prod
+    restart: on-failure:5
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      POSTGRES_SERVER: db
+      ENVIRONMENT: local 
+    ports:
+      - "8000:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Frontend (Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8000 
+    container_name: titan_frontend_prod
+    restart: on-failure:5
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data_prod:

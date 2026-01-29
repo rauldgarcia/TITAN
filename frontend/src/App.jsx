@@ -4,6 +4,7 @@ import { Bot, Send, Terminal, FileText, Activity, User, AlertCircle } from 'luci
 
 // Simple utility to generate session IDs (Thread IDs)
 const generateThreadId = () => 'session_' + Math.random().toString(36).substr(2, 9);
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 function App() {
   const [messages, setMessages] = useState([
@@ -41,7 +42,7 @@ function App() {
 
     try {
       // Call to the API (Backend)
-      const response = await axios.post('http://localhost:8000/chat/agent', {
+      const response = await axios.post('${API_URL}/chat/agent', {
         question: userQuestion,
         thread_id: threadId
       });
