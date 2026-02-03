@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logging.basicConfig(
@@ -13,13 +14,23 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_SERVER: str
-    POSTGRES_PORT: str
+    POSTGRES_PORT: int = 5432
     POSTGRES_DB: str
     TAVILY_API_KEY: str
+    ENVIRONMENT: str = "local"
+
+    INSTANCE_CONNECTION_NAME: Optional[str] = None
 
     @property
     def DATABASE_URL(self) -> str:
-        """URL for the main application database (titan_db)."""
+        """
+        Dynamically builds the database URL.
+        Uses Unix Sockets if INSTANCE_CONNECTION_NAME is present (Cloud Run),
+        otherwise uses standard TCP (Local/Docker Dev).
+        """
+        if self.INSTANCE_CONNECTION_NAME:
+            return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@/{self.POSTGRES_DB}?host=/cloudsql/{self.INSTANCE_CONNECTION_NAME}"
+
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     @property
@@ -29,11 +40,18 @@ class Settings(BaseSettings):
 
     @property
     def MAINTENANCE_DATABASE_URL(self) -> str:
-        """Used to create/delete other databases"""
+        """System database URL used for administrative tasks."""
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/postgres"
 
     @property
     def LANGGRAPH_DB_URL(self) -> str:
+        """
+        Database URL for LangGraph persistence (Psycopg 3).
+        Same logic as DATABASE_URL but without the '+asyncpg' prefix.
+        """
+        if self.INSTANCE_CONNECTION_NAME:
+            return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@/{self.POSTGRES_DB}?host=/cloudsql/{self.INSTANCE_CONNECTION_NAME}"
+
         return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
