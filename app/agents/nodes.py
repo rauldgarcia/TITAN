@@ -1,5 +1,4 @@
 import logging
-from langchain_ollama import ChatOllama
 from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_experimental.utilities import PythonREPL
@@ -106,7 +105,7 @@ class AgentNodes:
 
         context = "\n\n".join(documents)
 
-        generator_llm = ChatOllama(model="llama3.2", temperature=0)
+        generator_llm = LLMFactory.get_llm(temperature=0)
 
         chain = GENERATOR_PROMPT | generator_llm
         reponse = await chain.ainvoke({"context": context, "question": question})

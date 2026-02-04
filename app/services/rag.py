@@ -1,7 +1,8 @@
 import logging
-from langchain_ollama import ChatOllama
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
+from langchain.schema import Document
+from app.core.llm import LLMFactory
+from langchain.prompts import ChatPromptTemplate
+from langchain.schema import StrOutputParser
 from app.services.retriever import RetrievalService
 
 logger = logging.getLogger(__name__)
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 class RAGService:
     def __init__(self, retrieval_service: RetrievalService):
         self.retriever = retrieval_service
-        self.llm = ChatOllama(model="llama3.2", temperature=0)
+        self.llm = LLMFactory.get_llm(temperature=0)
 
     async def answer_question(self, question: str) -> dict:
         """
