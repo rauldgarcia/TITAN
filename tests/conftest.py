@@ -58,7 +58,7 @@ def nodes_with_mocks(mock_session):
     """
     with (
         patch("app.agents.nodes.RetrievalService"),
-        patch("app.agents.nodes.ChatOllama"),
+        patch("app.agents.nodes.LLMFactory"),
         patch("app.agents.nodes.TavilySearchResults"),
         patch("app.agents.nodes.PythonREPL"),
         patch("app.agents.nodes.load_mcp_tools"),
