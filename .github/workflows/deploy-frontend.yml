@@ -1,0 +1,55 @@
+name: TITAN Frontend Deployment
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+
+env:
+  PROJECT_ID: evidentedesarrollo
+  REGION: us-central1
+  REPO_NAME: titan-repo
+  SERVICE_NAME: titan-frontend
+  IMAGE_NAME: titan-frontend
+
+jobs:
+  deploy-frontend:
+    name: Build and Deploy Frontend to Cloud Run
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🔑 Google Auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: 🛠️ Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: 🐳 Docker Auth
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+
+      - name: 🏗️ Build and Push Frontend Container
+        run: |
+          docker build \
+            --build-arg VITE_API_URL=https://titan-backend-842951566749.us-central1.run.app \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            ./frontend
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: 🚀 Deploy Frontend to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.REGION }}
+          image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          
+          flags: |
+            --memory=512Mi
+            --cpu=1
+            --allow-unauthenticated
+            --port=80

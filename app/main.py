@@ -41,10 +41,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173http://localhost",
+    "http://localhost:5173",  # Local dev
+    "http://127.0.0.1:5173",
+    "http://localhost",
     "http://localhost:80",
     "http://127.0.0.1",
+    # Production Frontend (Will be generated after first deploy)
+    # Format: https://titan-frontend-<PROJECT_NUMBER>.<REGION>.run.app
+    # TODO: Add the actual URL here after first frontend deployment
+    "https://titan-frontend-842951566749.us-central1.run.app",
 ]
 
 app.add_middleware(

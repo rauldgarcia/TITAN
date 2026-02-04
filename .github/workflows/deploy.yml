@@ -45,6 +45,7 @@ jobs:
           flags: |
             --memory=2Gi
             --cpu=1
+            --add-cloudsql-instances=evidentedesarrollo:us-central1:titan-db-prod
 
           env_vars: |
             ENVIRONMENT=production
