@@ -13,7 +13,8 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install "poetry==$POETRY_VERSION"
 
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml ./
+RUN poetry lock --no-update
 RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
 
 FROM python:3.12-slim as runtime
