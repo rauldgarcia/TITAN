@@ -1,7 +1,7 @@
 import logging
 from app.core.llm import LLMFactory
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 from app.services.retriever import RetrievalService
 
 logger = logging.getLogger(__name__)
