@@ -1,5 +1,4 @@
 import logging
-from langchain.schema import Document
 from app.core.llm import LLMFactory
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import StrOutputParser
