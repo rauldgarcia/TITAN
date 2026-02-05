@@ -46,7 +46,6 @@ jobs:
             --memory=2Gi
             --cpu=1
             --add-cloudsql-instances=evidentedesarrollo:us-central1:titan-db-prod
-            --service-account=github-actions-deployer@evidentedesarrollo.iam.gserviceaccount.com
 
           env_vars: |
             ENVIRONMENT=production
