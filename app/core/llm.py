@@ -38,7 +38,9 @@ class LLMFactory:
 
         if env == "production":
             logger.info("Using Vertex AI Embeddings")
-            return VertexAIEmbeddings(model_name="models/text-embedding-004")
+            return VertexAIEmbeddings(
+                model_name="text-embedding-004", location="us-central1"
+            )
         else:
             device = "cuda" if torch.cuda.is_available() else "cpu"
             logger.info(f"Using Local HuggingFace Embeddings on {device.upper()}")
