@@ -47,7 +47,6 @@ jobs:
             --cpu=1
             --add-cloudsql-instances=evidentedesarrollo:us-central1:titan-db-prod
             --service-account=github-actions-deployer@evidentedesarrollo.iam.gserviceaccount.com
-            --set-env-vars=GOOGLE_CLOUD_PROJECT=evidentedesarrollo
 
           env_vars: |
             ENVIRONMENT=production
@@ -57,6 +56,7 @@ jobs:
             INSTANCE_CONNECTION_NAME=evidentedesarrollo:us-central1:titan-db-prod
             LANGCHAIN_TRACING_V2=true
             LANGCHAIN_PROJECT=TITAN-Platform
+            GOOGLE_CLOUD_PROJECT=evidentedesarrollo
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }}
             LANGCHAIN_API_KEY=${{ secrets.LANGCHAIN_API_KEY }}
