@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     @property
     def MAINTENANCE_DATABASE_URL(self) -> str:
         """System database URL used for administrative tasks."""
+        if self.INSTANCE_CONNECTION_NAME:
+            return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@/postgres?host=/cloudsql/{self.INSTANCE_CONNECTION_NAME}"
+
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/postgres"
 
     @property

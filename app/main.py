@@ -29,6 +29,7 @@ async def lifespan(app: FastAPI):
         logger.info("LangGraph Persistence Pool Ready.")
     except Exception as e:
         logger.error(f"Critical Startup Error: {e}")
+        raise e
     yield
     await close_pool()
     logger.info("TITAN System: SHUTTING DOWN...")
