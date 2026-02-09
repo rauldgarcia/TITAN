@@ -77,8 +77,10 @@ TITAN implements a **Stateful Hierarchical Graph**. The state is persisted in Po
 - **Core Backend:** Python 3.12+, FastAPI (Async), Pydantic v2.
 - **Frontend Architecture:** React 18 (Vite) with TailwindCSS v3 for a responsive, dark-mode "Glassmorphism" dashboard.
 - **Agent Orchestration:** LangGraph with **AsyncPostgresSaver** for production-grade persistence using Connection Pooling (`psycopg-pool`).
-- **Vector Database:** PostgreSQL 16 with `pgvector` extension.
-- **Embedding Engine:** Local GPU-accelerated inference using `sentence-transformers` (CUDA).
+- **Vector Database:** PostgreSQL 16 with `pgvector` extension hosted on Cloud SQL.
+- **LLM & Embeddings:** 
+  - **Production:** Google Vertex AI (Gemini 2.5 Flash Lite + text-embedding-004)
+  - **Local:** Ollama (Llama 3.2) + HuggingFace Embeddings (GPU-accelerated)
 - **Interoperability:** **Model Context Protocol (MCP)** for standardized connection to external data sources (Yahoo Finance).
 - **Data Engineering:** Custom ETL pipeline using \`sec-edgar-downloader\` and \`BeautifulSoup4\` for high-fidelity HTML parsing.
 - **Code Execution:** Sandboxed Python REPL for deterministic mathematical operations.
@@ -100,20 +102,43 @@ TITAN implements a **Stateful Hierarchical Graph**. The state is persisted in Po
 
 ### 2\. Environment Configuration
 
-Create a \`.env\` file in the root directory:
+#### Local Development
 
-    # Database
-    POSTGRES_USER=titan_user
-    POSTGRES_PASSWORD=titan_password
-    POSTGRES_SERVER=localhost
-    POSTGRES_PORT=5432
-    POSTGRES_DB=titan_db
+Create a `.env` file in the root directory:
 
-    # External Tools
-    TAVILY_API_KEY=tvly-xxxxxxxxxxxx
-    LANGCHAIN_API_KEY=lsv2_xxxxxxxx (Optional for Tracing)
-    LANGCHAIN_TRACING_V2=true
-    LANGCHAIN_PROJECT=TITAN-Platform
+```bash
+# Environment
+ENVIRONMENT=local
+
+# Database (Local)
+POSTGRES_USER=titan_user
+POSTGRES_PASSWORD=titan_password
+POSTGRES_SERVER=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=titan_db
+
+# External Tools
+TAVILY_API_KEY=tvly-xxxxxxxxxxxx
+LANGCHAIN_API_KEY=lsv2_xxxxxxxx  # Optional for Tracing
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_PROJECT=TITAN-Platform
+```
+
+#### Production (Cloud Run)
+
+For production deployment, additional environment variables are configured in GitHub Actions:
+
+```bash
+# Environment
+ENVIRONMENT=production
+
+# Database (Cloud SQL via Unix Socket)
+POSTGRES_SERVER=none  # Not used with Cloud SQL Proxy
+INSTANCE_CONNECTION_NAME=evidentedesarrollo:us-central1:titan-db-prod
+
+# Google Cloud
+GOOGLE_CLOUD_PROJECT=evidentedesarrollo
+```
 
 ### 3\. Installation & Deployment
 
@@ -136,6 +161,30 @@ Create a \`.env\` file in the root directory:
     npm run dev
     # Access the UI at http://localhost:5173
 
+### 4\. Cloud Deployment (Production)
+
+The application is deployed to Google Cloud Run with automated CI/CD via GitHub Actions.
+
+**Production Access:**
+- **Frontend:** [https://titan-frontend-842951566749.us-central1.run.app](https://titan-frontend-842951566749.us-central1.run.app)
+- **Backend API:** [https://titan-backend-842951566749.us-central1.run.app](https://titan-backend-842951566749.us-central1.run.app)
+- **API Documentation (Swagger):** [https://titan-backend-842951566749.us-central1.run.app/docs](https://titan-backend-842951566749.us-central1.run.app/docs)
+
+**Deployment Process:**
+1. Push changes to `main` branch
+2. GitHub Actions automatically builds and deploys:
+   - Backend: Multi-stage Docker build → Cloud Run with Cloud SQL Proxy
+   - Frontend: Vite production build → Cloud Run with API URL injection
+3. Deployments complete in ~5-8 minutes (backend) and ~2-3 minutes (frontend)
+
+**Key Production Features:**
+- **Vertex AI LLM:** Using Gemini 2.5 Flash Lite for generation
+- **Vertex AI Embeddings:** Using text-embedding-004 for vector search
+- **Cloud SQL:** Managed PostgreSQL 16 with pgvector via Unix socket
+- **Auto-scaling:** 0-10 instances based on load
+- **CORS:** Configured for cross-origin frontend-backend communication
+
+
 ---
 
 ## 📊 Data Ingestion Pipeline (ETL)
@@ -150,20 +199,30 @@ Before querying, you must populate the Vector Database with SEC Filings.
 
     # Step 3: Vectorize and Load to Postgres (Uses GPU)
     poetry run python scripts/ingest/vectorize.py
-
 ---
 
 ## 🧪 Testing & Capabilities Playbook
 
-Once the system is running, you can test its distinct capabilities via the Swagger UI (\`http://localhost:8000/docs\`) or cURL.
+### Running Tests Locally
 
-### 🧪 Running Tests
-
-TITAN uses `pytest` for unit and integration testing.
+TITAN uses `pytest` for comprehensive unit and integration testing:
 
 ```bash
 poetry run pytest -v
 ```
+
+**Test Coverage:**
+- Unit tests for agent nodes, routing logic, and parsers
+- Integration tests for database operations and API endpoints  
+- Mocked external dependencies for reliable CI/CD
+
+### Testing the System
+
+You can test TITAN's capabilities via Swagger UI or cURL:
+- **Local:** `http://localhost:8000/docs`
+- **Production:** [https://titan-backend-842951566749.us-central1.run.app/docs](https://titan-backend-842951566749.us-central1.run.app/docs)
+
+> **Note:** The system automatically selects Vertex AI (Gemini) in production and Ollama locally based on the `ENVIRONMENT` variable.
 
 ### Scenario A: Deep Strategic Analysis (Supervisor + Research)
 
@@ -243,12 +302,19 @@ _Demonstrates resilience. If the Quant Agent fails (e.g., division by zero), the
 - **Phase 7: Full Stack Experience**
   - \[x\] **Frontend Client:** React Application with TailwindCSS & Glassmorphism UI.
   - \[x\] **Dynamic Reporting:** Rendering Jinja2 HTML reports within React.
+- **Phase 8: Cloud Deployment**
+  - \[x\] **Containerization:** Multi-stage Dockerfile with optimized caching.
+  - \[x\] **Google Cloud Run:** Backend deployed to Cloud Run with Cloud SQL Proxy.
+  - \[x\] **Cloud SQL:** PostgreSQL 16 with pgvector extension.
+  - \[x\] **Frontend Deployment:** React app deployed to Cloud Run.
+  - \[x\] **CI/CD:** Automated deployment via GitHub Actions.
+  - \[x\] **Vertex AI Integration:** Production LLM and embeddings using Google AI.
+  - \[x\] **Production URLs:**
+    - Backend API: `https://titan-backend-842951566749.us-central1.run.app`
+    - Frontend: `https://titan-frontend-842951566749.us-central1.run.app`
+    - API Docs: `https://titan-backend-842951566749.us-central1.run.app/docs`
 
-  ### 🚧 Upcoming Phases
 
-  **Phase 8: Cloud Deployment**
-  - \[ \] **Containerization:** Production Dockerfile optimization.
-  - \[ \] **Google Cloud:** Deploy backend to Cloud Run & DB to Cloud SQL.
 
 ---
 
