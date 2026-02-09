@@ -175,7 +175,7 @@ The application is deployed to Google Cloud Run with automated CI/CD via GitHub 
 2. GitHub Actions automatically builds and deploys:
    - Backend: Multi-stage Docker build → Cloud Run with Cloud SQL Proxy
    - Frontend: Vite production build → Cloud Run with API URL injection
-3. Deployments complete in ~5-8 minutes (backend) and ~2-3 minutes (frontend)
+3. Full deployment completes in ~30 minutes (includes Docker build, tests, and Cloud Run deployment)
 
 **Key Production Features:**
 - **Vertex AI LLM:** Using Gemini 2.5 Flash Lite for generation
