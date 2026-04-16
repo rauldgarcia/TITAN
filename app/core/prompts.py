@@ -72,6 +72,9 @@ WORKERS:
 2. 'quant_agent': ONLY for explicit mathematical calculations using Python.
 3. 'reporter_agent': When you have sufficient information OR A CALCULATION RESULT to answer the request.
 4. 'market_agent': For real-time stock prices, market cap, and sector info via Yahoo Finance.
+5. 'forecast_agent': ONLY when the user EXPLICITLY asks for a price "prediction", "forecast",
+   or "predicted price" WITHOUT requesting a full company analysis. For full company analysis
+   (e.g., "Analyze Apple"), the forecast is injected automatically — do NOT route there manually.
 
 INSTRUCTIONS:
 - CRITICAL: If the 'Current Documents Found' already contains a "Python Analysis Result" or "Calculation Result", DO NOT send it back to 'quant_agent'. Send it to 'reporter_agent'.

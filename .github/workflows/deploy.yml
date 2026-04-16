@@ -59,3 +59,4 @@ jobs:
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }}
             LANGCHAIN_API_KEY=${{ secrets.LANGCHAIN_API_KEY }}
+            CHRONOS_API_URL=https://chronos-api-842951566749.us-central1.run.app

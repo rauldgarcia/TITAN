@@ -7,6 +7,7 @@ from typing import Literal
 
 from app.agents.state import AgentState
 from app.services.retriever import RetrievalService
+from app.services.chronos_client import ChronosClient
 from app.core.config import settings
 from app.schemas.report_schema import FinancialSummary
 from app.core.mcp_client import load_mcp_tools
@@ -150,7 +151,10 @@ class AgentNodes:
 
             logger.info("Rendering HTML...")
             template = templates_env.get_template("financial_report.html")
-            html_output = template.render(data=json_data)
+            html_output = template.render(
+                data=json_data,
+                forecast=state.get("forecast_data"),  # Inject CHRONOS data if present
+            )
 
             return {"generation": html_output, "question": question}
 
@@ -195,10 +199,17 @@ class AgentNodes:
         chain = SUPERVISOR_PROMPT | self.router_llm | JsonOutputParser()
 
         if current_step > 0 and docs:
-            logger.info(
-                "Supervisor Logic: Data present and loop active -> Forcing Reporter."
-            )
-            return {"next_step": "reporter_agent", "loop_step": current_step + 1}
+            # Auto-enrich with CHRONOS forecast before generating the final report
+            if not state.get("forecast_data"):
+                logger.info(
+                    "Supervisor Logic: Data ready — auto-fetching CHRONOS forecast next."
+                )
+                return {"next_step": "forecast_agent", "loop_step": current_step + 1}
+            else:
+                logger.info(
+                    "Supervisor Logic: Data + CHRONOS forecast ready → Reporter."
+                )
+                return {"next_step": "reporter_agent", "loop_step": current_step + 1}
 
         try:
             result = await chain.ainvoke({"question": question, "len_docs": len(docs)})
@@ -272,6 +283,52 @@ class AgentNodes:
         logger.info("Human has updated the state. Resuming workflow...")
         return {"error_message": None, "next_step": "reporter_agent"}
 
+    async def forecast_agent(self, state: AgentState) -> AgentState:
+        """
+        Node: Calls the CHRONOS ML Forecasting API to obtain a price prediction.
+        Automatically injected by the supervisor before report generation.
+        Falls back gracefully if CHRONOS is unreachable.
+        """
+        logger.info("---FORECAST AGENT (CHRONOS)---")
+        question = state["question"]
+
+        # Extract ticker from the question (same heuristic as market_agent)
+        words = question.split()
+        ticker = next(
+            (w for w in words if w.isupper() and 1 < len(w) <= 5),
+            "AAPL",
+        )
+        logger.info(f"Extracted ticker: {ticker} — calling CHRONOS API...")
+
+        forecast = await ChronosClient.get_forecast(ticker)
+
+        if not forecast:
+            logger.warning(f"CHRONOS unavailable for {ticker}. Continuing without forecast.")
+            unavailable_msg = (
+                f"[CHRONOS Forecast] Service unavailable for {ticker}. "
+                "Price prediction could not be retrieved at this time."
+            )
+            current_docs = state.get("documents", [])
+            return {
+                "documents": current_docs + [unavailable_msg],
+                "forecast_data": None,
+            }
+
+        # Format a human-readable summary for the LLM context
+        summary = (
+            f"[CHRONOS ML Forecast] Predicted close price for {forecast['ticker']} "
+            f"on {str(forecast['target_date'])[:10]}: "
+            f"${forecast['predicted_close']:.2f}. "
+            f"Champion model: {forecast['model_used']}. "
+            f"Environment: {forecast['environment']}."
+        )
+
+        current_docs = state.get("documents", [])
+        return {
+            "documents": current_docs + [summary],
+            "forecast_data": forecast,
+        }
+
     async def route_supervisor(
         self, state: AgentState
     ) -> Literal[
@@ -280,6 +337,7 @@ class AgentNodes:
         "market_agent",
         "human_intervention",
         "reporter_agent",
+        "forecast_agent",
     ]:
         next_node = state.get("next_step")
         current_step = state.get("loop_step", 0)
@@ -301,6 +359,8 @@ class AgentNodes:
             return "market_agent"
         elif next_node == "human_intervention":
             return "human_intervention"
+        elif next_node == "forecast_agent":
+            return "forecast_agent"
         elif next_node == "reporter_agent":
             return "reporter_agent"
         else:

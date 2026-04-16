@@ -11,3 +11,4 @@ logs/
 *.log
 var.txt
 titan_backup.sql
+.agent/

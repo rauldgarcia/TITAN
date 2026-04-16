@@ -27,6 +27,7 @@ class TitanGraph:
         workflow.add_node("web_search", self.nodes.web_search)
         workflow.add_node("market_agent", self.nodes.market_agent)
         workflow.add_node("human_intervention", self.nodes.human_node)
+        workflow.add_node("forecast_agent", self.nodes.forecast_agent)  # CHRONOS integration
 
         workflow.set_entry_point("supervisor")
         workflow.add_conditional_edges("supervisor", self.nodes.route_supervisor)
@@ -34,6 +35,7 @@ class TitanGraph:
         workflow.add_conditional_edges("grade_documents", self.nodes.route_search)
         workflow.add_edge("web_search", "supervisor")
         workflow.add_edge("market_agent", "supervisor")
+        workflow.add_edge("forecast_agent", "supervisor")  # Returns to supervisor after enrichment
         workflow.add_conditional_edges("quant_agent", self.nodes.route_quant)
         workflow.add_edge("human_intervention", "supervisor")
         workflow.add_edge("reporter_agent", END)

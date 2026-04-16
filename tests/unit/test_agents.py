@@ -40,11 +40,13 @@ async def test_quant_agent_failure_handling(nodes_with_mocks):
 
 
 @pytest.mark.asyncio
-async def test_supervisor_force_reporter(nodes_with_mocks):
+async def test_supervisor_force_forecast_then_reporter(nodes_with_mocks):
     """
-    Test the deterministic logic: If there is already data and loop > 0, force report.
+    Test the deterministic logic: If there is data but no forecast, force forecast_agent.
+    If there is data and forecast_data, force reporter_agent.
     """
-    state = AgentState(
+    # 1. State with no forecast -> should route to forecast_agent
+    state_no_forecast = AgentState(
         question="Analyze Apple",
         documents=["Some financial data"],
         loop_step=1,
@@ -53,7 +55,23 @@ async def test_supervisor_force_reporter(nodes_with_mocks):
         sources=[],
         error_message=None,
     )
-    result = await nodes_with_mocks.supervisor_node(state)
+    result_1 = await nodes_with_mocks.supervisor_node(state_no_forecast)
 
-    assert result["next_step"] == "reporter_agent"
-    assert result["loop_step"] == 2
+    assert result_1["next_step"] == "forecast_agent"
+    assert result_1["loop_step"] == 2
+
+    # 2. State WITH forecast -> should route to reporter_agent
+    state_with_forecast = AgentState(
+        question="Analyze Apple",
+        documents=["Some financial data"],
+        loop_step=1,
+        next_step=None,
+        generation="",
+        sources=[],
+        error_message=None,
+        forecast_data={"ticker": "AAPL"},
+    )
+    result_2 = await nodes_with_mocks.supervisor_node(state_with_forecast)
+
+    assert result_2["next_step"] == "reporter_agent"
+    assert result_2["loop_step"] == 2

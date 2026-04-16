@@ -161,7 +161,24 @@ GOOGLE_CLOUD_PROJECT=evidentedesarrollo
     npm run dev
     # Access the UI at http://localhost:5173
 
-### 4\. Cloud Deployment (Production)
+### 4\. Running the Full Local Integrated Demo (Offline)
+
+TITAN natively integrates with the **CHRONOS MLOps Forecasting Engine**. To run the true offline experience for the entire Dual-Mode ecosystem:
+
+```bash
+# Terminal 1: Run CHRONOS (Predictive Engine)
+cd /path/to/CHRONOS
+poetry install
+ENVIRONMENT=local poetry run uvicorn chronos.api.main:app --port 8001
+
+# Terminal 2: Run TITAN (Agentic Orchestrator)
+cd /path/to/TITAN
+poetry run uvicorn app.main:app --port 8000
+```
+This forces the TITAN agents to query your local CHRONOS instance (at `:8001`), demonstrating hybrid multi-service communication.
+
+### 5\. Cloud Deployment (Production)
+
 
 The application is deployed to Google Cloud Run with automated CI/CD via GitHub Actions.
 

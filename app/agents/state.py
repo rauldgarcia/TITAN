@@ -13,3 +13,4 @@ class AgentState(TypedDict):
     next_step: Optional[str]
     loop_step: int
     error_message: Optional[str]
+    forecast_data: Optional[dict]  # Raw CHRONOS API response — populated by forecast_agent
