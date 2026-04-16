@@ -48,7 +48,9 @@ class ChronosClient:
             logger.warning(f"CHRONOS API timed out for ticker {ticker}.")
             return None
         except httpx.HTTPStatusError as e:
-            logger.warning(f"CHRONOS API returned HTTP {e.response.status_code} for {ticker}.")
+            logger.warning(
+                f"CHRONOS API returned HTTP {e.response.status_code} for {ticker}."
+            )
             return None
         except Exception as e:
             logger.error(f"Unexpected error calling CHRONOS for {ticker}: {e}")

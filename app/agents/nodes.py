@@ -303,7 +303,9 @@ class AgentNodes:
         forecast = await ChronosClient.get_forecast(ticker)
 
         if not forecast:
-            logger.warning(f"CHRONOS unavailable for {ticker}. Continuing without forecast.")
+            logger.warning(
+                f"CHRONOS unavailable for {ticker}. Continuing without forecast."
+            )
             unavailable_msg = (
                 f"[CHRONOS Forecast] Service unavailable for {ticker}. "
                 "Price prediction could not be retrieved at this time."

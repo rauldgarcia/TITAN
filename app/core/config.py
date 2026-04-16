@@ -18,7 +18,9 @@ class Settings(BaseSettings):
     POSTGRES_DB: str
     TAVILY_API_KEY: str
     ENVIRONMENT: str = "local"
-    CHRONOS_API_URL: str = "http://localhost:8001"  # Override in deploy.yml for production
+    CHRONOS_API_URL: str = (
+        "http://localhost:8001"  # Override in deploy.yml for production
+    )
 
     INSTANCE_CONNECTION_NAME: Optional[str] = None
 
