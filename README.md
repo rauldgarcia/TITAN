@@ -15,7 +15,7 @@
 
 ## 📖 Executive Summary
 
-**TITAN** is not just a chatbot; it is an autonomous **Financial Analysis Engine** engineered to mimic the workflow of a human audit team. It moves beyond simple RAG by employing a **Supervisor-Worker Architecture** where a central orchestrator delegates tasks to specialized agents (Researchers, Quants, Market Analysts) to solve complex financial queries.
+**TITAN** is not just a chatbot; it is an autonomous **Financial Analysis Engine** engineered to mimic the workflow of a human audit team. It moves beyond simple RAG by employing a **Supervisor-Worker Architecture** where a central orchestrator delegates tasks to specialized agents (Researchers, Quants, Market Analysts, ML Forecasters) to solve complex financial queries.
 
 The system features a **Cyberpunk-style Dashboard**, **Self-Correction** mechanisms, **Real-Time Data Injection** via MCP, and a **Human-in-the-Loop (HITL)** protocol to handle execution failures gracefully.
 
@@ -35,6 +35,7 @@ TITAN implements a **Stateful Hierarchical Graph**. The state is persisted in Po
     Supervisor -- "Need Context/Risks" --> Research[Research Agent]
     Supervisor -- "Need Complex Math" --> Quant[Quant Agent]
     Supervisor -- "Need Live Price" --> Market[Market Agent]
+    Supervisor -- "Need ML Prediction" --> Forecast[Forecast Agent]
     Supervisor -- "Analysis Complete" --> Reporter[Reporter Agent]
 
     %% Research Sub-Graph
@@ -61,10 +62,17 @@ TITAN implements a **Stateful Hierarchical Graph**. The state is persisted in Po
         Client --> Return3[Return Live Data]
     end
 
+    %% Forecast Sub-Graph
+    subgraph "Forecasting (CHRONOS)"
+        Forecast --> API[CHRONOS MLOps API]
+        API --> Return4[Return ML Prediction]
+    end
+
     %% Feedback Loops
     Return1 --> Supervisor
     Return2 --> Supervisor
     Return3 --> Supervisor
+    Return4 --> Supervisor
 
     %% Output
     Reporter --> HTML[HTML Dashboard] --> ReactClient[Render in UI]
@@ -163,7 +171,7 @@ GOOGLE_CLOUD_PROJECT=evidentedesarrollo
 
 ### 4\. Running the Full Local Integrated Demo (Offline)
 
-TITAN natively integrates with the **CHRONOS MLOps Forecasting Engine**. To run the true offline experience for the entire Dual-Mode ecosystem:
+TITAN natively integrates with the **[CHRONOS MLOps Forecasting Engine](https://github.com/rauldgarcia/CHRONOS)**. To run the true offline experience for the entire Dual-Mode ecosystem:
 
 ```bash
 # Terminal 1: Run CHRONOS (Predictive Engine)
